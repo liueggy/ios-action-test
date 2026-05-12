@@ -33,10 +33,10 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable {
 
     var priorityLabel: String {
         switch priority {
-        case 1: return "Low"
-        case 2: return "Medium"
-        case 3: return "High"
-        default: return "None"
+        case 1: return "低"
+        case 2: return "中"
+        case 3: return "高"
+        default: return "无"
         }
     }
 
