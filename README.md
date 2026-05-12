@@ -1,11 +1,53 @@
-# iOS Action Test
+# 玻璃待办 / iOS Action Test
 
-This repository is a minimal GitHub Actions smoke test for iOS compilation on a macOS runner.
+这是一个轻量 iOS UIKit 应用，用于验证 GitHub Actions 能否在 macOS runner 上编译并打包 unsigned IPA。
 
-It uses a Swift Package with an iOS platform declaration and a workflow that runs `xcodebuild` on `macos-14`.
+当前版本采用稳定的 UIKit 系统控件和手写 IPA 打包流程，不再依赖液态玻璃专用代码。
 
-## Goal
+## 打包方式
 
-Verify that GitHub Actions can start a macOS runner and compile Swift code for an iOS destination without code signing.
+进入 Actions 页面运行：
 
-This does **not** produce an installable IPA yet, because real-device installation requires Apple code signing certificates and provisioning profiles.
+```text
+Build Tasks IPA
+```
+
+成功后会生成：
+
+```text
+GlassTasks-unsigned-ipa
+```
+
+并发布到 Release：
+
+```text
+glass-tasks-v3
+```
+
+## 自定义应用图标
+
+你可以把自己的 PNG 图标上传到：
+
+```text
+App/Assets/AppIcon/
+```
+
+推荐文件名：
+
+```text
+AppIcon60x60@2x.png   # 120x120
+AppIcon60x60@3x.png   # 180x180
+```
+
+要求：
+
+- PNG 格式
+- 正方形
+- 建议不透明背景
+- 文件名保持一致
+
+上传后重新运行 Action，workflow 会自动把图标复制进 `.app` 并写入 IPA。
+
+## 注意
+
+生成的是 unsigned IPA。真机安装前仍需要你自己用证书和 provisioning profile 重签名。
