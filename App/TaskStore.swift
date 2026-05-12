@@ -10,8 +10,6 @@ final class TaskStore: ObservableObject {
         load()
     }
 
-    // MARK: - Persistence
-
     private func load() {
         guard let data = UserDefaults.standard.data(forKey: key),
               let decoded = try? JSONDecoder().decode([TaskItem].self, from: data) else {
@@ -26,8 +24,6 @@ final class TaskStore: ObservableObject {
         }
     }
 
-    // MARK: - CRUD
-
     func add(_ task: TaskItem) {
         tasks.insert(task, at: 0)
         save()
@@ -40,7 +36,10 @@ final class TaskStore: ObservableObject {
     }
 
     func delete(at offsets: IndexSet) {
-        tasks.remove(atOffsets: offsets)
+        for index in offsets.sorted(by: >) {
+            guard tasks.indices.contains(index) else { continue }
+            tasks.remove(at: index)
+        }
         save()
     }
 
@@ -54,8 +53,6 @@ final class TaskStore: ObservableObject {
         tasks[index].isCompleted.toggle()
         save()
     }
-
-    // MARK: - Computed
 
     var pendingTasks: [TaskItem] {
         tasks.filter { !$0.isCompleted }.sorted { $0.dueDate < $1.dueDate }
