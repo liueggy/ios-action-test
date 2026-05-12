@@ -1,4 +1,4 @@
-name: Build Glass Tasks IPA
+name: Build Tasks IPA
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-unsigned-ipa:
-    name: Build unsigned Glass Tasks IPA
+    name: Build unsigned Tasks IPA
     runs-on: macos-14
 
     steps:
@@ -53,9 +53,21 @@ jobs:
               <key>CFBundlePackageType</key>
               <string>APPL</string>
               <key>CFBundleShortVersionString</key>
-              <string>3.0</string>
+              <string>3.1</string>
               <key>CFBundleVersion</key>
-              <string>3</string>
+              <string>4</string>
+              <key>CFBundleIcons</key>
+              <dict>
+                  <key>CFBundlePrimaryIcon</key>
+                  <dict>
+                      <key>CFBundleIconFiles</key>
+                      <array>
+                          <string>AppIcon60x60</string>
+                      </array>
+                      <key>UIPrerenderedIcon</key>
+                      <false/>
+                  </dict>
+              </dict>
               <key>LSRequiresIPhoneOS</key>
               <true/>
               <key>MinimumOSVersion</key>
@@ -84,6 +96,31 @@ jobs:
           Path('build/Payload/GlassTasks.app/Info.plist').write_text(plist, encoding='utf-8')
           PY
           plutil -lint build/Payload/GlassTasks.app/Info.plist | tee build-logs/plutil.txt
+
+      - name: Copy optional app icons
+        run: |
+          set -e
+          ICON_DIR="App/Assets/AppIcon"
+          APP_DIR="build/Payload/GlassTasks.app"
+          mkdir -p build-logs
+
+          echo "Looking for custom icons in $ICON_DIR" | tee build-logs/icons.txt
+
+          if [ -f "$ICON_DIR/AppIcon60x60@2x.png" ]; then
+            cp "$ICON_DIR/AppIcon60x60@2x.png" "$APP_DIR/AppIcon60x60@2x.png"
+            echo "Included AppIcon60x60@2x.png" | tee -a build-logs/icons.txt
+          else
+            echo "Missing AppIcon60x60@2x.png, app will use default icon behavior." | tee -a build-logs/icons.txt
+          fi
+
+          if [ -f "$ICON_DIR/AppIcon60x60@3x.png" ]; then
+            cp "$ICON_DIR/AppIcon60x60@3x.png" "$APP_DIR/AppIcon60x60@3x.png"
+            echo "Included AppIcon60x60@3x.png" | tee -a build-logs/icons.txt
+          else
+            echo "Missing AppIcon60x60@3x.png, app will use default icon behavior." | tee -a build-logs/icons.txt
+          fi
+
+          find "$APP_DIR" -maxdepth 1 -name 'AppIcon*.png' -print | tee -a build-logs/icons.txt
 
       - name: Build unsigned UIKit app for physical iPhone arm64
         run: |
@@ -136,16 +173,18 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: glass-tasks-v3
-          name: "玻璃待办 v3.0 - 中文界面 unsigned IPA"
+          name: "玻璃待办 v3.1 - unsigned IPA"
           body: |
-            玻璃待办 v3.0 unsigned IPA built by GitHub Actions.
+            玻璃待办 v3.1 unsigned IPA built by GitHub Actions.
 
-            ## 新增内容
-            - 中文界面
-            - 待办、总览、今日、逾期、摘要分享
-            - 快捷操作：电话、短信、邮件、网页、地图、日历、系统设置
-            - 设置页：外观模式、强调色、学习/工作/生活/默认模式
-            - 不再生成或处理应用图标图片，保持默认 unsigned IPA 自动打包流程
+            ## 当前版本
+            - 使用稳定的 UIKit 系统控件
+            - 不包含液态玻璃专用代码
+            - 支持待办、总览、今日、逾期、摘要分享
+            - 支持快捷操作：电话、短信、邮件、网页、地图、日历、系统设置
+            - 支持设置页：外观模式、强调色、学习/工作/生活/默认模式
+            - 预留应用图标目录：`App/Assets/AppIcon/`
+            - 可上传：`AppIcon60x60@2x.png` 和 `AppIcon60x60@3x.png`
             - Bundle ID: `com.a7OM.9Sqorrj`
             - Minimum iOS: `17.0`
 
