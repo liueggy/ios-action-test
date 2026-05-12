@@ -37,7 +37,7 @@ final class TasksViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        section == 0 ? "Overview" : "Tasks"
+        return section == 0 ? "Overview" : "Tasks"
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -106,7 +106,7 @@ final class TasksViewController: UITableViewController {
         var parts = [formatter.string(from: task.dueDate)]
         if task.priority > 0 { parts.append("Priority: \(task.priorityLabel)") }
         if !task.notes.isEmpty { parts.append(task.notes) }
-        return parts.joined(separator: " · ")
+        return parts.joined(separator: " · " )
     }
 
     @objc private func filterChanged(_ sender: UISegmentedControl) {
@@ -117,10 +117,10 @@ final class TasksViewController: UITableViewController {
     @objc private func addTask() {
         let controller = AddTaskViewController()
         controller.onSave = { [weak self] task, shouldCalendar in
-            guard let self else { return }
+            guard let self = self else { return }
             var newTask = task
             if shouldCalendar {
-                Swift.Task {
+                Task {
                     if let id = await CalendarService.shared.addToCalendar(task: newTask) {
                         newTask.calendarEventIdentifier = id
                     }
@@ -141,7 +141,7 @@ final class TasksViewController: UITableViewController {
     @objc private func addTaskToCalendar(_ sender: UIButton) {
         guard sender.tag < filteredTasks.count else { return }
         let task = filteredTasks[sender.tag]
-        Swift.Task {
+        Task {
             if let id = await CalendarService.shared.addToCalendar(task: task) {
                 var updated = task
                 updated.calendarEventIdentifier = id
