@@ -118,7 +118,10 @@ final class DashboardViewController: UITableViewController {
                 let controller = NotesViewController(style: .insetGrouped)
                 navigationController?.pushViewController(controller, animated: true)
             }
-            if indexPath.row == 2 { showComingSoon("链接收藏") }
+            if indexPath.row == 2 {
+                let controller = LinksViewController(style: .insetGrouped)
+                navigationController?.pushViewController(controller, animated: true)
+            }
         case .upcoming:
             guard !store.pendingTasks.isEmpty else { return }
             let controller = TasksViewController(style: .insetGrouped)
