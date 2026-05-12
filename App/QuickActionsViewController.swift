@@ -123,7 +123,7 @@ final class QuickActionsViewController: UITableViewController {
 
     private func sendSMS() {
         let body = settings.quickMessage.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        openURLString("sms:&body=\(body)", failureMessage: "无法打开短信，请检查设备是否支持。")
+        openURLString("sms:?body=\(body)", failureMessage: "无法打开短信，请检查设备是否支持。")
     }
 
     private func sendMail() {
@@ -152,7 +152,7 @@ final class QuickActionsViewController: UITableViewController {
     }
 
     private func shareSummary() {
-        let text = TaskStore().summaryText(modeName: settings.appMode.displayName)
+        let text = TaskStore.shared.summaryText(modeName: settings.appMode.displayName)
         let controller = UIActivityViewController(activityItems: [text], applicationActivities: nil)
         controller.popoverPresentationController?.sourceView = tableView
         controller.popoverPresentationController?.sourceRect = CGRect(x: tableView.bounds.midX, y: tableView.bounds.midY, width: 1, height: 1)
@@ -160,7 +160,7 @@ final class QuickActionsViewController: UITableViewController {
     }
 
     private func copySummary() {
-        UIPasteboard.general.string = TaskStore().summaryText(modeName: settings.appMode.displayName)
+        UIPasteboard.general.string = TaskStore.shared.summaryText(modeName: settings.appMode.displayName)
         let alert = UIAlertController(title: "已复制", message: "今日摘要已经复制到剪贴板。", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "好", style: .default))
         present(alert, animated: true)
@@ -172,9 +172,11 @@ final class QuickActionsViewController: UITableViewController {
             return
         }
 
-        UIApplication.shared.open(url, options: [:]) { success in
+        UIApplication.shared.open(url, options: [:]) { [weak self] success in
             if !success {
-                self.showError(message: failureMessage)
+                DispatchQueue.main.async {
+                    self?.showError(message: failureMessage)
+                }
             }
         }
     }

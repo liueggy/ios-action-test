@@ -177,9 +177,16 @@ final class AppSettings {
         let style = appearanceMode.interfaceStyle
         let tint = accentStyle.tintColor
 
+        // Apply to all scene windows
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
         let windows = scenes.flatMap { $0.windows }
         windows.forEach { window in
+            window.overrideUserInterfaceStyle = style
+            window.tintColor = tint
+        }
+
+        // Also apply to the key window directly (covers early launch before scene registration)
+        if let delegate = UIApplication.shared.delegate as? AppDelegate, let window = delegate.window {
             window.overrideUserInterfaceStyle = style
             window.tintColor = tint
         }

@@ -2,11 +2,13 @@ import Foundation
 import Combine
 
 final class TaskStore: ObservableObject {
+    static let shared = TaskStore()
+
     @Published var tasks: [TaskItem] = []
 
     private let key = "glass_tasks_v2"
 
-    init() {
+    private init() {
         load()
     }
 

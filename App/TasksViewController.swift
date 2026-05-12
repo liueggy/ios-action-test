@@ -1,7 +1,7 @@
 import UIKit
 
 final class TasksViewController: UITableViewController {
-    private let store = TaskStore()
+    private let store = TaskStore.shared
     private let filters = ["待处理", "已完成", "全部"]
     private var selectedFilter = 0
 
