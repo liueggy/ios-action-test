@@ -1,0 +1,38 @@
+name: iOS Build Smoke Test
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Build Swift package for iOS
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show runner and Xcode info
+        run: |
+          sw_vers
+          uname -a
+          xcodebuild -version
+          xcode-select -p
+          swift --version
+
+      - name: Resolve package dependencies
+        run: swift package resolve
+
+      - name: Build for iOS simulator SDK
+        run: |
+          xcodebuild build \
+            -scheme IOSActionTest \
+            -destination 'generic/platform=iOS Simulator' \
+            -sdk iphonesimulator \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Run Swift package tests on macOS host
+        run: swift test -v
