@@ -1,4 +1,5 @@
 import UIKit
+import SwiftUI
 
 final class DashboardViewController: UITableViewController {
     private let store = TaskStore.shared
@@ -20,6 +21,7 @@ final class DashboardViewController: UITableViewController {
         tableView.backgroundColor = .systemGroupedBackground
         tableView.separatorStyle = .none
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.register(SwiftUIHeroCell.self, forCellReuseIdentifier: SwiftUIHeroCell.reuseIdentifier)
         NotificationCenter.default.addObserver(self, selector: #selector(reloadContent), name: .appSettingsDidChange, object: nil)
     }
 
@@ -59,7 +61,7 @@ final class DashboardViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         guard let section = Section(rawValue: indexPath.section) else { return UITableView.automaticDimension }
         switch section {
-        case .hero: return 150
+        case .hero: return 220
         case .metrics: return 76
         case .quickCapture: return 64
         case .upcoming: return 78
@@ -67,6 +69,21 @@ final class DashboardViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if section == .hero {
+            let heroCell = tableView.dequeueReusableCell(withIdentifier: SwiftUIHeroCell.reuseIdentifier, for: indexPath) as! SwiftUIHeroCell
+            let view = EggHeroCardView(
+                greeting: greeting(),
+                modeName: AppSettings.shared.appMode.displayName,
+                completionRate: Int(store.completionRate * 100),
+                pendingCount: store.pendingCount,
+                todayCount: store.todayTasks.count,
+                overdueCount: store.overdueTasks.count,
+                accent: Color(uiColor: AppSettings.shared.accentStyle.tintColor)
+            )
+            heroCell.configure(view: view, parent: self)
+            return heroCell
+        }
+
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         cell.accessoryType = .none
         cell.accessoryView = nil
@@ -74,7 +91,6 @@ final class DashboardViewController: UITableViewController {
         cell.backgroundColor = .clear
         cell.contentConfiguration = nil
 
-        guard let section = Section(rawValue: indexPath.section) else { return cell }
         switch section {
         case .hero:
             configureHero(cell)

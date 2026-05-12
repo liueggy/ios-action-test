@@ -15,6 +15,7 @@ let package = Package(
             path: "App",
             linkerSettings: [
                 .linkedFramework("UIKit"),
+                .linkedFramework("SwiftUI"),
                 .linkedFramework("EventKit"),
                 .linkedFramework("Combine")
             ]

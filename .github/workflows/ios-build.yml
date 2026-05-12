@@ -137,6 +137,7 @@ jobs:
             -target arm64-apple-ios17.0 \
             -sdk "$IOS_SDK" \
             -framework UIKit \
+            -framework SwiftUI \
             -framework EventKit \
             -framework Combine \
             -emit-executable \
