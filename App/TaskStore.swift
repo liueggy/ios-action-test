@@ -1,74 +1,70 @@
 import Foundation
+import Combine
 
-final class TaskStore {
-    static let shared = TaskStore()
+final class TaskStore: ObservableObject {
+    @Published var tasks: [TaskItem] = []
 
-    private let storageKey = "glass.tasks.items.v1"
-    private(set) var tasks: [TaskItem] = []
+    private let key = "glass_tasks_v2"
 
-    private init() {
+    init() {
         load()
-        if tasks.isEmpty {
-            tasks = [
-                TaskItem(title: "Try Glass Tasks", notes: "Add this sample task to Calendar, then mark it complete.", dueDate: Date().addingTimeInterval(3600))
-            ]
-            save()
-        }
     }
 
-    func load() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey) else {
-            tasks = []
+    // MARK: - Persistence
+
+    private func load() {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let decoded = try? JSONDecoder().decode([TaskItem].self, from: data) else {
             return
         }
+        tasks = decoded
+    }
 
-        do {
-            tasks = try JSONDecoder().decode([TaskItem].self, from: data)
-                .sorted { $0.dueDate < $1.dueDate }
-        } catch {
-            tasks = []
+    private func save() {
+        if let data = try? JSONEncoder().encode(tasks) {
+            UserDefaults.standard.set(data, forKey: key)
         }
     }
 
-    func save() {
-        do {
-            let data = try JSONEncoder().encode(tasks)
-            UserDefaults.standard.set(data, forKey: storageKey)
-        } catch {
-            assertionFailure("Failed to save tasks: \(error)")
-        }
-    }
+    // MARK: - CRUD
 
     func add(_ task: TaskItem) {
-        tasks.append(task)
-        sortAndSave()
+        tasks.insert(task, at: 0)
+        save()
     }
 
     func update(_ task: TaskItem) {
         guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         tasks[index] = task
-        sortAndSave()
-    }
-
-    func delete(at index: Int) {
-        guard tasks.indices.contains(index) else { return }
-        tasks.remove(at: index)
         save()
     }
 
-    func toggleComplete(id: UUID) {
-        guard let index = tasks.firstIndex(where: { $0.id == id }) else { return }
+    func delete(at offsets: IndexSet) {
+        tasks.remove(atOffsets: offsets)
+        save()
+    }
+
+    func delete(_ task: TaskItem) {
+        tasks.removeAll { $0.id == task.id }
+        save()
+    }
+
+    func toggleComplete(_ task: TaskItem) {
+        guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         tasks[index].isCompleted.toggle()
-        sortAndSave()
-    }
-
-    private func sortAndSave() {
-        tasks.sort { lhs, rhs in
-            if lhs.isCompleted != rhs.isCompleted {
-                return !lhs.isCompleted && rhs.isCompleted
-            }
-            return lhs.dueDate < rhs.dueDate
-        }
         save()
     }
+
+    // MARK: - Computed
+
+    var pendingTasks: [TaskItem] {
+        tasks.filter { !$0.isCompleted }.sorted { $0.dueDate < $1.dueDate }
+    }
+
+    var completedTasks: [TaskItem] {
+        tasks.filter { $0.isCompleted }.sorted { $0.dueDate > $1.dueDate }
+    }
+
+    var pendingCount: Int { pendingTasks.count }
+    var completedCount: Int { completedTasks.count }
 }
