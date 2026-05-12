@@ -2,23 +2,19 @@
 import PackageDescription
 
 let package = Package(
-    name: "IOSActionTest",
+    name: "GlassTasks",
     platforms: [
-        .iOS(.v16)
-    ],
-    products: [
-        .library(
-            name: "IOSActionTest",
-            targets: ["IOSActionTest"]
-        )
+        .iOS(.v17)
     ],
     targets: [
-        .target(
-            name: "IOSActionTest"
-        ),
-        .testTarget(
-            name: "IOSActionTestTests",
-            dependencies: ["IOSActionTest"]
+        .executableTarget(
+            name: "GlassTasks",
+            path: "App",
+            linkerSettings: [
+                .linkedFramework("UIKit"),
+                .linkedFramework("SwiftUI"),
+                .linkedFramework("EventKit"),
+            ]
         )
     ]
 )
