@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-unsigned-ipa:
-    name: Build unsigned Glass Tasks IPA
+    name: Build unsigned Glass Tasks IPA (SwiftUI)
     runs-on: macos-14
 
     steps:
@@ -26,9 +26,20 @@ jobs:
             xcode-select -p
             swift --version
             xcrun --sdk iphoneos --show-sdk-path
+            ls /Applications/ | grep Xcode || true
           } | tee build-logs/environment.txt
 
-      - name: Generate app bundle metadata
+      - name: Select latest Xcode
+        run: |
+          # Use the latest available Xcode on the runner
+          LATEST_XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$LATEST_XCODE" ]; then
+            sudo xcode-select -s "$LATEST_XCODE/Contents/Developer"
+            echo "Selected: $LATEST_XCODE"
+          fi
+          xcodebuild -version | tee -a build-logs/environment.txt
+
+      - name: Generate Info.plist
         run: |
           mkdir -p build/Payload/GlassTasks.app build-logs
           python3 - <<'PY'
@@ -53,13 +64,13 @@ jobs:
               <key>CFBundlePackageType</key>
               <string>APPL</string>
               <key>CFBundleShortVersionString</key>
-              <string>1.0</string>
+              <string>2.0</string>
               <key>CFBundleVersion</key>
-              <string>1</string>
+              <string>2</string>
               <key>LSRequiresIPhoneOS</key>
               <true/>
               <key>MinimumOSVersion</key>
-              <string>16.0</string>
+              <string>17.0</string>
               <key>UIApplicationSupportsIndirectInputEvents</key>
               <true/>
               <key>UILaunchScreen</key>
@@ -67,6 +78,8 @@ jobs:
               <key>UISupportedInterfaceOrientations</key>
               <array>
                   <string>UIInterfaceOrientationPortrait</string>
+                  <string>UIInterfaceOrientationLandscapeLeft</string>
+                  <string>UIInterfaceOrientationLandscapeRight</string>
               </array>
               <key>UIDeviceFamily</key>
               <array>
@@ -77,6 +90,11 @@ jobs:
               <string>Glass Tasks needs Calendar access to add task due dates to your system calendar.</string>
               <key>NSCalendarsWriteOnlyAccessUsageDescription</key>
               <string>Glass Tasks needs write-only Calendar access to create events for your tasks.</string>
+              <key>UIApplicationSceneManifest</key>
+              <dict>
+                  <key>UIApplicationSupportsMultipleScenes</key>
+                  <false/>
+              </dict>
           </dict>
           </plist>
           '''
@@ -85,25 +103,33 @@ jobs:
           PY
           plutil -lint build/Payload/GlassTasks.app/Info.plist | tee build-logs/plutil.txt
 
-      - name: Build unsigned .app for physical iPhone arm64
+      - name: Build SwiftUI app for arm64 iPhone
         run: |
           set -o pipefail
           IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           SWIFT_COMPILER=$(xcrun --find swiftc)
 
+          echo "SDK: $IOS_SDK"
+          echo "Compiler: $SWIFT_COMPILER"
+
           $SWIFT_COMPILER \
             -parse-as-library \
             App/*.swift \
-            -target arm64-apple-ios16.0 \
+            -target arm64-apple-ios17.0 \
             -sdk "$IOS_SDK" \
+            -framework SwiftUI \
             -framework UIKit \
             -framework EventKit \
+            -framework Combine \
             -emit-executable \
+            -O \
             -o build/Payload/GlassTasks.app/GlassTasks 2>&1 | tee build-logs/swiftc.txt
 
           chmod +x build/Payload/GlassTasks.app/GlassTasks
           file build/Payload/GlassTasks.app/GlassTasks | tee build-logs/file.txt
 
+      - name: Package unsigned IPA
+        run: |
           cd build
           zip -qry GlassTasks-unsigned.ipa Payload
           ls -lh GlassTasks-unsigned.ipa | tee ../build-logs/ipa.txt
@@ -128,23 +154,36 @@ jobs:
         if: success()
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: glass-tasks-latest
-          name: Glass Tasks unsigned IPA
+          tag_name: glass-tasks-v2
+          name: "Glass Tasks v2.0 - SwiftUI + Liquid Glass"
           body: |
-            Glass Tasks unsigned IPA built by GitHub Actions.
+            Glass Tasks v2.0 - Complete SwiftUI rewrite with iOS 26 Liquid Glass support.
 
-            Features:
-            - Native UIKit task list
-            - Apple HIG-style navigation and dynamic type
-            - Glass/material visual style using system blur materials
-            - Add tasks with due dates and notes
-            - Mark tasks complete/incomplete
-            - Add tasks to the system Calendar via EventKit
+            ## What's New
+            - Full SwiftUI implementation (NavigationStack, Form, List)
+            - Standard controls (Slider, Toggle, Picker) that automatically adopt Liquid Glass on iOS 26
+            - Priority system with visual slider
+            - Improved task management with filter tabs
+            - Symbol effects and spring animations
+            - Material-based stat cards
+            - EventKit calendar integration with smart reminders
 
-            Bundle ID: `com.a7OM.9Sqorrj`
-            Minimum iOS: `16.0`
+            ## iOS 26 Liquid Glass
+            When running on iOS 26, the following elements automatically get Liquid Glass appearance:
+            - Navigation bar
+            - Segmented picker
+            - Slider knob (the smooth glass animation you wanted)
+            - Toggle switch
+            - Sheet presentations
+            - Toolbar buttons
 
-            This IPA is unsigned. Re-sign it with your own certificate and provisioning profile before installing.
+            ## Info
+            - Bundle ID: `com.a7OM.9Sqorrj`
+            - Minimum iOS: `17.0`
+            - Architecture: `arm64`
+            - Framework: SwiftUI + EventKit
+
+            This IPA is unsigned. Re-sign with your certificate and provisioning profile before installing.
           files: build/GlassTasks-unsigned.ipa
           prerelease: false
           make_latest: true
