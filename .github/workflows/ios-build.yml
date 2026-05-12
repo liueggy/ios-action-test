@@ -143,6 +143,7 @@ jobs:
             -framework Vision \
             -framework CoreImage \
             -framework UniformTypeIdentifiers \
+            -framework Network \
             -framework QuickLook \
             -framework Combine \
             -emit-executable \
@@ -184,6 +185,7 @@ jobs:
             Egg Tool v0.4 unsigned IPA built by GitHub Actions.
 
             ## 当前版本
+            - 新增 SSH 工具：主机管理、端口连通性测试、ssh/scp 命令生成、ssh:// 调起外部客户端
             - 增强阅读器：补齐常见代码/配置文件格式，识别 EPUB/MOBI/AZW/CBZ 等电子书
             - 新增阅读器：导入 TXT/Markdown/JSON/代码/图片/PDF/Office 等多格式文件，支持内置阅读和 Quick Look 预览
             - 新增数据备份：任务、笔记、链接统一 JSON 导出和导入恢复

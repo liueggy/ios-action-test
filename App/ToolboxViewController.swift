@@ -18,6 +18,7 @@ final class ToolboxViewController: UICollectionViewController {
             case appSettings
             case shareSummary
             case copySummary
+            case sshTools
             case ocrTools
             case qrTools
             case links
@@ -93,6 +94,7 @@ final class ToolboxViewController: UICollectionViewController {
             ToolItem(title: "日历", subtitle: "打开系统日历", icon: "calendar", tint: .systemRed, action: .calendar),
             ToolItem(title: "复制摘要", subtitle: "待办概览到剪贴板", icon: "doc.on.doc.fill", tint: .systemPurple, action: .copySummary),
             ToolItem(title: "分享摘要", subtitle: "通过系统分享面板", icon: "square.and.arrow.up.fill", tint: accent, action: .shareSummary),
+            ToolItem(title: "SSH", subtitle: "主机 / 端口 / 命令", icon: "terminal.fill", tint: .systemMint, action: .sshTools),
             ToolItem(title: "链接收藏", subtitle: "网页 / 资料 / 文档", icon: "link.circle.fill", tint: .systemCyan, action: .links),
             ToolItem(title: "文本工具", subtitle: "字数 / JSON / Base64", icon: "textformat.abc", tint: .systemTeal, action: .textTools),
             ToolItem(title: "OCR", subtitle: "图片识别文字", icon: "viewfinder", tint: .systemPink, action: .ocrTools),
@@ -112,6 +114,8 @@ final class ToolboxViewController: UICollectionViewController {
         case .appSettings: openURLString(UIApplication.openSettingsURLString, failureMessage: "无法打开设置页面。")
         case .shareSummary: shareSummary()
         case .copySummary: copySummary()
+        case .sshTools:
+            navigationController?.pushViewController(SSHToolsViewController(style: .insetGrouped), animated: true)
         case .ocrTools:
             navigationController?.pushViewController(OCRToolsViewController(), animated: true)
         case .qrTools:

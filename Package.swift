@@ -21,6 +21,7 @@ let package = Package(
                 .linkedFramework("Vision"),
                 .linkedFramework("CoreImage"),
                 .linkedFramework("UniformTypeIdentifiers"),
+                .linkedFramework("Network"),
                 .linkedFramework("QuickLook"),
                 .linkedFramework("Combine")
             ]
