@@ -20,6 +20,7 @@ let package = Package(
                 .linkedFramework("PhotosUI"),
                 .linkedFramework("Vision"),
                 .linkedFramework("CoreImage"),
+                .linkedFramework("UniformTypeIdentifiers"),
                 .linkedFramework("Combine")
             ]
         )

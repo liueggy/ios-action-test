@@ -87,6 +87,12 @@ final class LinkStore {
         }
     }
 
+    func replaceAll(_ newLinks: [LinkItem]) {
+        links = newLinks
+        sortLinks()
+        save()
+    }
+
     private func sortLinks() {
         links.sort {
             if $0.isPinned != $1.isPinned { return $0.isPinned && !$1.isPinned }

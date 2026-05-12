@@ -88,6 +88,12 @@ final class NoteStore {
         }
     }
 
+    func replaceAll(_ newNotes: [NoteItem]) {
+        notes = newNotes
+        sortNotes()
+        save()
+    }
+
     private func sortNotes() {
         notes.sort {
             if $0.isPinned != $1.isPinned { return $0.isPinned && !$1.isPinned }

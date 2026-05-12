@@ -43,7 +43,7 @@ final class SettingsViewController: UITableViewController {
         case 0: return 2
         case 1: return 2
         case 2: return 5
-        default: return 2
+        default: return 3
         }
     }
 
@@ -115,10 +115,14 @@ final class SettingsViewController: UITableViewController {
             cell.detailTextLabel?.numberOfLines = 2
             cell.accessoryType = .disclosureIndicator
         case (3, 0):
+            cell.textLabel?.text = "数据备份"
+            cell.detailTextLabel?.text = "导入 / 导出任务、笔记和链接"
+            cell.accessoryType = .disclosureIndicator
+        case (3, 1):
             cell.textLabel?.text = "功能说明"
             cell.detailTextLabel?.text = "待办、日历、快捷调用与摘要分享"
             cell.accessoryType = .disclosureIndicator
-        case (3, 1):
+        case (3, 2):
             cell.textLabel?.text = "恢复默认个性化设置"
             cell.detailTextLabel?.text = "保留任务数据，仅重置快捷操作配置"
         default:
@@ -153,8 +157,10 @@ final class SettingsViewController: UITableViewController {
                 self.settings.updateQuickMessage($0)
             }
         case (3, 0):
-            showInfoAlert()
+            navigationController?.pushViewController(BackupViewController(style: .insetGrouped), animated: true)
         case (3, 1):
+            showInfoAlert()
+        case (3, 2):
             settings.resetPersonalization()
             reloadContent()
         default:

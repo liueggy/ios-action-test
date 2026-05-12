@@ -82,6 +82,11 @@ final class TaskStore: ObservableObject {
         return Double(completedCount) / Double(tasks.count)
     }
 
+    func replaceAll(_ newTasks: [TaskItem]) {
+        tasks = newTasks
+        save()
+    }
+
     func summaryText(modeName: String) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
