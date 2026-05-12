@@ -1,4 +1,4 @@
-name: Build Unsigned iOS IPA
+name: Build Glass Tasks IPA
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-unsigned-ipa:
-    name: Build unsigned IPA on macOS
+    name: Build unsigned Glass Tasks IPA
     runs-on: macos-14
 
     steps:
@@ -28,45 +28,11 @@ jobs:
             xcrun --sdk iphoneos --show-sdk-path
           } | tee build-logs/environment.txt
 
-      - name: Generate minimal iOS app files
+      - name: Generate app bundle metadata
         run: |
-          mkdir -p GeneratedApp build/Payload/IOSActionTest.app build-logs
+          mkdir -p build/Payload/GlassTasks.app build-logs
           python3 - <<'PY'
           from pathlib import Path
-
-          swift = r'''import UIKit
-
-          @main
-          class AppDelegate: UIResponder, UIApplicationDelegate {
-              var window: UIWindow?
-
-              func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-                  let window = UIWindow(frame: UIScreen.main.bounds)
-                  let vc = UIViewController()
-                  vc.view.backgroundColor = UIColor.systemBackground
-
-                  let label = UILabel()
-                  label.text = "Hello from GitHub Actions unsigned IPA"
-                  label.textAlignment = .center
-                  label.font = UIFont.systemFont(ofSize: 22, weight: .semibold)
-                  label.numberOfLines = 0
-                  label.translatesAutoresizingMaskIntoConstraints = false
-
-                  vc.view.addSubview(label)
-                  NSLayoutConstraint.activate([
-                      label.centerXAnchor.constraint(equalTo: vc.view.centerXAnchor),
-                      label.centerYAnchor.constraint(equalTo: vc.view.centerYAnchor),
-                      label.leadingAnchor.constraint(greaterThanOrEqualTo: vc.view.leadingAnchor, constant: 24),
-                      label.trailingAnchor.constraint(lessThanOrEqualTo: vc.view.trailingAnchor, constant: -24)
-                  ])
-
-                  window.rootViewController = vc
-                  window.makeKeyAndVisible()
-                  self.window = window
-                  return true
-              }
-          }
-          '''
 
           plist = r'''<?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -75,15 +41,15 @@ jobs:
               <key>CFBundleDevelopmentRegion</key>
               <string>en</string>
               <key>CFBundleExecutable</key>
-              <string>IOSActionTest</string>
+              <string>GlassTasks</string>
               <key>CFBundleIdentifier</key>
               <string>com.a7OM.9Sqorrj</string>
               <key>CFBundleInfoDictionaryVersion</key>
               <string>6.0</string>
               <key>CFBundleName</key>
-              <string>IOSActionTest</string>
+              <string>GlassTasks</string>
               <key>CFBundleDisplayName</key>
-              <string>iOS Action Test</string>
+              <string>Glass Tasks</string>
               <key>CFBundlePackageType</key>
               <string>APPL</string>
               <key>CFBundleShortVersionString</key>
@@ -102,14 +68,22 @@ jobs:
               <array>
                   <string>UIInterfaceOrientationPortrait</string>
               </array>
+              <key>UIDeviceFamily</key>
+              <array>
+                  <integer>1</integer>
+                  <integer>2</integer>
+              </array>
+              <key>NSCalendarsUsageDescription</key>
+              <string>Glass Tasks needs Calendar access to add task due dates to your system calendar.</string>
+              <key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+              <string>Glass Tasks needs write-only Calendar access to create events for your tasks.</string>
           </dict>
           </plist>
           '''
 
-          Path('GeneratedApp/AppDelegate.swift').write_text(swift, encoding='utf-8')
-          Path('build/Payload/IOSActionTest.app/Info.plist').write_text(plist, encoding='utf-8')
+          Path('build/Payload/GlassTasks.app/Info.plist').write_text(plist, encoding='utf-8')
           PY
-          plutil -lint build/Payload/IOSActionTest.app/Info.plist | tee build-logs/plutil.txt
+          plutil -lint build/Payload/GlassTasks.app/Info.plist | tee build-logs/plutil.txt
 
       - name: Build unsigned .app for physical iPhone arm64
         run: |
@@ -119,33 +93,34 @@ jobs:
 
           $SWIFT_COMPILER \
             -parse-as-library \
-            GeneratedApp/AppDelegate.swift \
+            App/*.swift \
             -target arm64-apple-ios16.0 \
             -sdk "$IOS_SDK" \
             -framework UIKit \
+            -framework EventKit \
             -emit-executable \
-            -o build/Payload/IOSActionTest.app/IOSActionTest 2>&1 | tee build-logs/swiftc.txt
+            -o build/Payload/GlassTasks.app/GlassTasks 2>&1 | tee build-logs/swiftc.txt
 
-          chmod +x build/Payload/IOSActionTest.app/IOSActionTest
-          file build/Payload/IOSActionTest.app/IOSActionTest | tee build-logs/file.txt
+          chmod +x build/Payload/GlassTasks.app/GlassTasks
+          file build/Payload/GlassTasks.app/GlassTasks | tee build-logs/file.txt
 
           cd build
-          zip -qry IOSActionTest-unsigned.ipa Payload
-          ls -lh IOSActionTest-unsigned.ipa | tee ../build-logs/ipa.txt
+          zip -qry GlassTasks-unsigned.ipa Payload
+          ls -lh GlassTasks-unsigned.ipa | tee ../build-logs/ipa.txt
 
       - name: Upload unsigned IPA artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: IOSActionTest-unsigned-ipa
-          path: build/IOSActionTest-unsigned.ipa
+          name: GlassTasks-unsigned-ipa
+          path: build/GlassTasks-unsigned.ipa
           if-no-files-found: error
 
       - name: Upload build logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: IOSActionTest-build-logs
+          name: GlassTasks-build-logs
           path: build-logs
           if-no-files-found: ignore
 
@@ -153,15 +128,23 @@ jobs:
         if: success()
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ios-unsigned-latest
-          name: Latest unsigned iOS IPA
+          tag_name: glass-tasks-latest
+          name: Glass Tasks unsigned IPA
           body: |
-            Latest unsigned IPA built by GitHub Actions.
+            Glass Tasks unsigned IPA built by GitHub Actions.
+
+            Features:
+            - Native UIKit task list
+            - Apple HIG-style navigation and dynamic type
+            - Glass/material visual style using system blur materials
+            - Add tasks with due dates and notes
+            - Mark tasks complete/incomplete
+            - Add tasks to the system Calendar via EventKit
 
             Bundle ID: `com.a7OM.9Sqorrj`
             Minimum iOS: `16.0`
 
             This IPA is unsigned. Re-sign it with your own certificate and provisioning profile before installing.
-          files: build/IOSActionTest-unsigned.ipa
+          files: build/GlassTasks-unsigned.ipa
           prerelease: false
           make_latest: true
