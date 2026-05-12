@@ -69,6 +69,10 @@ final class DashboardViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let section = Section(rawValue: indexPath.section) else {
+            return tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        }
+
         if section == .hero {
             let heroCell = tableView.dequeueReusableCell(withIdentifier: SwiftUIHeroCell.reuseIdentifier, for: indexPath) as! SwiftUIHeroCell
             let view = EggHeroCardView(
