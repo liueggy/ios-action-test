@@ -44,7 +44,7 @@ final class ReaderViewController: UITableViewController, UISearchResultsUpdating
     }
 
     override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-        "支持 TXT、Markdown、JSON、代码、图片、PDF、Office/iWork 等文件。文本类使用内置阅读器，其他格式使用系统 Quick Look。"
+        "支持 TXT、Markdown、JSON、常见代码/配置文件、图片、PDF、Office/iWork、EPUB/MOBI/AZW/CBZ 等电子书。文本类使用内置阅读器，其他格式使用系统 Quick Look。"
     }
 
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -149,6 +149,11 @@ final class ReaderViewController: UITableViewController, UISearchResultsUpdating
         case .image:
             let controller = ImageReaderViewController(item: item, url: url)
             navigationController?.pushViewController(controller, animated: true)
+        case .ebook:
+            previewURL = url
+            let controller = QLPreviewController()
+            controller.dataSource = self
+            navigationController?.pushViewController(controller, animated: true)
         case .quickLook:
             previewURL = url
             let controller = QLPreviewController()
@@ -190,6 +195,7 @@ final class ReaderViewController: UITableViewController, UISearchResultsUpdating
         switch ReaderFileKind.kind(for: item.fileExtension) {
         case .text: return item.isPinned ? "pin.fill" : "doc.text.fill"
         case .image: return item.isPinned ? "pin.fill" : "photo.fill"
+        case .ebook: return item.isPinned ? "pin.fill" : "book.closed.fill"
         case .quickLook: return item.isPinned ? "pin.fill" : "doc.richtext.fill"
         }
     }
@@ -199,6 +205,7 @@ final class ReaderViewController: UITableViewController, UISearchResultsUpdating
         switch ReaderFileKind.kind(for: item.fileExtension) {
         case .text: return AppSettings.shared.accentStyle.tintColor
         case .image: return .systemPink
+        case .ebook: return .systemBrown
         case .quickLook: return .systemIndigo
         }
     }
@@ -207,6 +214,7 @@ final class ReaderViewController: UITableViewController, UISearchResultsUpdating
         switch ReaderFileKind.kind(for: item.fileExtension) {
         case .text: return "内置文本阅读"
         case .image: return "图片阅读"
+        case .ebook: return "电子书 / 系统预览"
         case .quickLook: return "Quick Look 预览"
         }
     }

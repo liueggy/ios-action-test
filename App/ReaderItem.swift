@@ -128,15 +128,25 @@ final class ReaderStore {
 enum ReaderFileKind {
     case text
     case image
+    case ebook
     case quickLook
 
     static func kind(for ext: String) -> ReaderFileKind {
         let e = ext.lowercased()
-        if ["txt", "md", "markdown", "json", "csv", "log", "xml", "html", "htm", "yaml", "yml", "swift", "py", "js", "ts", "css"].contains(e) {
+        if [
+            "txt", "md", "markdown", "json", "jsonl", "csv", "tsv", "log", "xml", "html", "htm", "yaml", "yml",
+            "swift", "py", "js", "ts", "jsx", "tsx", "css", "scss", "less", "vue",
+            "java", "kt", "kts", "c", "cc", "cpp", "cxx", "h", "hpp", "m", "mm",
+            "go", "rs", "php", "rb", "sh", "bash", "zsh", "fish", "sql", "toml", "ini", "conf", "cfg", "env",
+            "dart", "lua", "pl", "r", "scala", "gradle", "dockerfile", "makefile", "gitignore", "lock"
+        ].contains(e) {
             return .text
         }
         if ["png", "jpg", "jpeg", "gif", "webp", "heic", "heif"].contains(e) {
             return .image
+        }
+        if ["epub", "mobi", "azw", "azw3", "fb2", "cbz", "cbr", "djvu"].contains(e) {
+            return .ebook
         }
         return .quickLook
     }
