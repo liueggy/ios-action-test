@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-unsigned-ipa:
     name: Build unsigned IPA on macOS
@@ -145,3 +148,20 @@ jobs:
           name: IOSActionTest-build-logs
           path: build-logs
           if-no-files-found: ignore
+
+      - name: Publish IPA to GitHub Release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-unsigned-latest
+          name: Latest unsigned iOS IPA
+          body: |
+            Latest unsigned IPA built by GitHub Actions.
+
+            Bundle ID: `com.a7OM.9Sqorrj`
+            Minimum iOS: `16.0`
+
+            This IPA is unsigned. Re-sign it with your own certificate and provisioning profile before installing.
+          files: build/IOSActionTest-unsigned.ipa
+          prerelease: false
+          make_latest: true
