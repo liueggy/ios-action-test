@@ -88,7 +88,7 @@ final class TaskStore: ObservableObject {
         formatter.timeStyle = .short
 
         var lines = [String]()
-        lines.append("玻璃待办摘要")
+        lines.append("Egg Tool 摘要")
         lines.append("模式：\(modeName)")
         lines.append("待处理：\(pendingCount) 项")
         lines.append("已完成：\(completedCount) 项")

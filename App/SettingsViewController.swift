@@ -188,7 +188,7 @@ final class SettingsViewController: UITableViewController {
     }
 
     private func showInfoAlert() {
-        let message = "玻璃待办采用中文界面，支持任务管理、日历写入、个性化快捷调用、外观模式切换和待办摘要分享。界面尽量使用系统原生导航、标签栏和分组控件，以便在较新的 iOS 设计语言下自然获得液态玻璃观感。"
+        let message = "Egg Tool 采用中文界面，支持任务管理、日历写入、个性化快捷调用、外观模式切换和待办摘要分享。后续会继续扩展文本工具、OCR、二维码、快速笔记、链接收藏和个人自动化能力。"
         let alert = UIAlertController(title: "功能说明", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "知道了", style: .default))
         present(alert, animated: true)

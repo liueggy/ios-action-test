@@ -114,7 +114,7 @@ final class AppSettings {
         quickEmail = defaults.string(forKey: Keys.quickEmail) ?? "example@example.com"
         quickWebsite = defaults.string(forKey: Keys.quickWebsite) ?? "https://www.apple.com.cn"
         quickMapQuery = defaults.string(forKey: Keys.quickMapQuery) ?? "成都理工大学"
-        quickMessage = defaults.string(forKey: Keys.quickMessage) ?? "你好，我正在使用玻璃待办，需要和你确认一件事情。"
+        quickMessage = defaults.string(forKey: Keys.quickMessage) ?? "你好，我正在使用 Egg Tool，需要和你确认一件事情。"
     }
 
     func updateAppearanceMode(_ mode: AppearanceMode) {
@@ -170,7 +170,7 @@ final class AppSettings {
         updateQuickEmail("example@example.com")
         updateQuickWebsite("https://www.apple.com.cn")
         updateQuickMapQuery("成都理工大学")
-        updateQuickMessage("你好，我正在使用玻璃待办，需要和你确认一件事情。")
+        updateQuickMessage("你好，我正在使用 Egg Tool，需要和你确认一件事情。")
     }
 
     func applyAppearance() {

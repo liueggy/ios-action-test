@@ -16,17 +16,23 @@ final class MainTabBarController: UITabBarController {
         let navAppearance = UINavigationBarAppearance()
         navAppearance.configureWithDefaultBackground()
 
+        let today = UINavigationController(rootViewController: DashboardViewController(style: .insetGrouped))
+        today.navigationBar.prefersLargeTitles = true
+        today.navigationBar.standardAppearance = navAppearance
+        today.navigationBar.scrollEdgeAppearance = navAppearance
+        today.tabBarItem = UITabBarItem(title: "今日", image: UIImage(systemName: "sparkles.rectangle.stack"), selectedImage: UIImage(systemName: "sparkles.rectangle.stack.fill"))
+
         let tasks = UINavigationController(rootViewController: TasksViewController(style: .insetGrouped))
         tasks.navigationBar.prefersLargeTitles = true
         tasks.navigationBar.standardAppearance = navAppearance
         tasks.navigationBar.scrollEdgeAppearance = navAppearance
-        tasks.tabBarItem = UITabBarItem(title: "待办", image: UIImage(systemName: "checklist"), selectedImage: UIImage(systemName: "checklist"))
+        tasks.tabBarItem = UITabBarItem(title: "任务", image: UIImage(systemName: "checklist"), selectedImage: UIImage(systemName: "checklist"))
 
-        let actions = UINavigationController(rootViewController: QuickActionsViewController(style: .insetGrouped))
-        actions.navigationBar.prefersLargeTitles = true
-        actions.navigationBar.standardAppearance = navAppearance
-        actions.navigationBar.scrollEdgeAppearance = navAppearance
-        actions.tabBarItem = UITabBarItem(title: "快捷", image: UIImage(systemName: "bolt.circle"), selectedImage: UIImage(systemName: "bolt.circle.fill"))
+        let toolbox = UINavigationController(rootViewController: ToolboxViewController())
+        toolbox.navigationBar.prefersLargeTitles = true
+        toolbox.navigationBar.standardAppearance = navAppearance
+        toolbox.navigationBar.scrollEdgeAppearance = navAppearance
+        toolbox.tabBarItem = UITabBarItem(title: "工具", image: UIImage(systemName: "square.grid.2x2"), selectedImage: UIImage(systemName: "square.grid.2x2.fill"))
 
         let settings = UINavigationController(rootViewController: SettingsViewController(style: .insetGrouped))
         settings.navigationBar.prefersLargeTitles = true
@@ -34,7 +40,7 @@ final class MainTabBarController: UITabBarController {
         settings.navigationBar.scrollEdgeAppearance = navAppearance
         settings.tabBarItem = UITabBarItem(title: "设置", image: UIImage(systemName: "slider.horizontal.3"), selectedImage: UIImage(systemName: "slider.horizontal.3"))
 
-        viewControllers = [tasks, actions, settings]
+        viewControllers = [today, tasks, toolbox, settings]
         selectedIndex = 0
 
         // Use UITabBarAppearance to ensure correct background in both light and dark mode

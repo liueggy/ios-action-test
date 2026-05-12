@@ -1,8 +1,17 @@
-# 玻璃待办 / iOS Action Test
+# Egg Tool
 
-这是一个轻量 iOS UIKit 应用，用于验证 GitHub Actions 能否在 macOS runner 上编译并打包 unsigned IPA。
+Egg Tool 是一个面向 iOS 的个人工具箱雏形：从待办、日历和快捷操作出发，逐步扩展为今日仪表盘、工具箱、快速记录和个人自动化中心。
 
-当前版本采用稳定的 UIKit 系统控件和手写 IPA 打包流程，不再依赖液态玻璃专用代码。
+当前版本使用稳定的 UIKit 原生控件和手写 IPA 打包流程，通过 GitHub Actions 在 macOS runner 上编译并打包 unsigned IPA。
+
+## 当前功能
+
+- 今日仪表盘：问候、任务概览、快速入口、接下来任务
+- 任务管理：待处理、已完成、全部、逾期、优先级
+- 日历写入：可把任务同步写入系统日历
+- 工具箱宫格：电话、短信、邮件、网页、地图、日历、摘要复制和分享
+- 个性化设置：明暗主题、强调色、学习/工作/生活/默认模式
+- 预留扩展：文本工具、OCR、二维码、快速笔记、链接收藏
 
 ## 打包方式
 
@@ -15,7 +24,7 @@ Build Tasks IPA
 成功后会生成：
 
 ```text
-GlassTasks-unsigned-ipa
+EggTool-unsigned-ipa
 ```
 
 并发布到 Release：

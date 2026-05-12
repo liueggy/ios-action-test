@@ -128,7 +128,7 @@ final class QuickActionsViewController: UITableViewController {
 
     private func sendMail() {
         let email = settings.quickEmail.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let subject = "来自玻璃待办".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let subject = "来自 Egg Tool".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let body = settings.quickMessage.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         openURLString("mailto:\(email)?subject=\(subject)&body=\(body)", failureMessage: "无法打开邮件，请检查邮箱地址格式。")
     }

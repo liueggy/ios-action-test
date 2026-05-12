@@ -2,16 +2,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "GlassTasks",
+    name: "EggTool",
     platforms: [
         .iOS(.v17)
     ],
     products: [
-        .executable(name: "GlassTasks", targets: ["GlassTasks"])
+        .executable(name: "EggTool", targets: ["EggTool"])
     ],
     targets: [
         .executableTarget(
-            name: "GlassTasks",
+            name: "EggTool",
             path: "App",
             linkerSettings: [
                 .linkedFramework("UIKit"),

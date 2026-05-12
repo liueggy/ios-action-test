@@ -22,7 +22,7 @@ final class TasksViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "玻璃待办"
+        title = "任务"
         navigationItem.largeTitleDisplayMode = .always
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addTask))
         navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: self, action: #selector(shareSummary))

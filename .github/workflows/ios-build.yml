@@ -30,7 +30,7 @@ jobs:
 
       - name: Generate app bundle metadata
         run: |
-          mkdir -p build/Payload/GlassTasks.app build-logs
+          mkdir -p build/Payload/EggTool.app build-logs
           python3 - <<'PY'
           from pathlib import Path
 
@@ -41,15 +41,15 @@ jobs:
               <key>CFBundleDevelopmentRegion</key>
               <string>zh_CN</string>
               <key>CFBundleExecutable</key>
-              <string>GlassTasks</string>
+              <string>EggTool</string>
               <key>CFBundleIdentifier</key>
               <string>com.a7OM.9Sqorrj</string>
               <key>CFBundleInfoDictionaryVersion</key>
               <string>6.0</string>
               <key>CFBundleName</key>
-              <string>GlassTasks</string>
+              <string>Egg Tool</string>
               <key>CFBundleDisplayName</key>
-              <string>玻璃待办</string>
+              <string>Egg Tool</string>
               <key>CFBundlePackageType</key>
               <string>APPL</string>
               <key>CFBundleShortVersionString</key>
@@ -88,20 +88,20 @@ jobs:
                   <integer>2</integer>
               </array>
               <key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-              <string>玻璃待办需要日历写入权限，以便把任务同步到你的系统日历。</string>
+              <string>Egg Tool 需要日历写入权限，以便把任务同步到你的系统日历。</string>
           </dict>
           </plist>
           '''
 
-          Path('build/Payload/GlassTasks.app/Info.plist').write_text(plist, encoding='utf-8')
+          Path('build/Payload/EggTool.app/Info.plist').write_text(plist, encoding='utf-8')
           PY
-          plutil -lint build/Payload/GlassTasks.app/Info.plist | tee build-logs/plutil.txt
+          plutil -lint build/Payload/EggTool.app/Info.plist | tee build-logs/plutil.txt
 
       - name: Copy optional app icons
         run: |
           set -e
           ICON_DIR="App/Assets/AppIcon"
-          APP_DIR="build/Payload/GlassTasks.app"
+          APP_DIR="build/Payload/EggTool.app"
           mkdir -p build-logs
 
           echo "Looking for custom icons in $ICON_DIR" | tee build-logs/icons.txt
@@ -141,30 +141,30 @@ jobs:
             -framework Combine \
             -emit-executable \
             -O \
-            -o build/Payload/GlassTasks.app/GlassTasks 2>&1 | tee build-logs/swiftc.txt
+            -o build/Payload/EggTool.app/EggTool 2>&1 | tee build-logs/swiftc.txt
 
-          chmod +x build/Payload/GlassTasks.app/GlassTasks
-          file build/Payload/GlassTasks.app/GlassTasks | tee build-logs/file.txt
+          chmod +x build/Payload/EggTool.app/EggTool
+          file build/Payload/EggTool.app/EggTool | tee build-logs/file.txt
 
       - name: Package unsigned IPA
         run: |
           cd build
-          zip -qry GlassTasks-unsigned.ipa Payload
-          ls -lh GlassTasks-unsigned.ipa | tee ../build-logs/ipa.txt
+          zip -qry EggTool-unsigned.ipa Payload
+          ls -lh EggTool-unsigned.ipa | tee ../build-logs/ipa.txt
 
       - name: Upload unsigned IPA artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: GlassTasks-unsigned-ipa
-          path: build/GlassTasks-unsigned.ipa
+          name: EggTool-unsigned-ipa
+          path: build/EggTool-unsigned.ipa
           if-no-files-found: error
 
       - name: Upload build logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: GlassTasks-build-logs
+          name: EggTool-build-logs
           path: build-logs
           if-no-files-found: ignore
 
@@ -173,23 +173,22 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: glass-tasks-v3
-          name: "玻璃待办 v3.1 - unsigned IPA"
+          name: "Egg Tool v0.4 - unsigned IPA"
           body: |
-            玻璃待办 v3.1 unsigned IPA built by GitHub Actions.
+            Egg Tool v0.4 unsigned IPA built by GitHub Actions.
 
             ## 当前版本
-            - 使用稳定的 UIKit 系统控件
-            - 不包含液态玻璃专用代码
-            - 支持待办、总览、今日、逾期、摘要分享
-            - 支持快捷操作：电话、短信、邮件、网页、地图、日历、系统设置
-            - 支持设置页：外观模式、强调色、学习/工作/生活/默认模式
-            - 预留应用图标目录：`App/Assets/AppIcon/`
-            - 可上传：`AppIcon60x60@2x.png` 和 `AppIcon60x60@3x.png`
+            - 项目名升级为 Egg Tool
+            - 新增“今日”仪表盘：首页展示问候、任务概览、快速入口和接下来任务
+            - 新增“工具箱”宫格：电话、短信、邮件、网页、地图、日历、摘要分享等入口
+            - 保留任务管理、日历写入、外观模式、强调色、学习/工作/生活/默认模式
+            - 预留文本工具、OCR、二维码等后续扩展入口
+            - 使用 UIKit 原生组件和明暗主题自适应卡片设计
             - Bundle ID: `com.a7OM.9Sqorrj`
             - Minimum iOS: `17.0`
 
             This IPA is unsigned. Re-sign with your own certificate and provisioning profile before installing.
-          files: build/GlassTasks-unsigned.ipa
+          files: build/EggTool-unsigned.ipa
           prerelease: false
           make_latest: true
           overwrite_files: true
