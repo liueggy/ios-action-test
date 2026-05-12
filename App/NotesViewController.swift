@@ -17,6 +17,7 @@ final class NotesViewController: UITableViewController, UISearchResultsUpdating 
         tableView = UITableView(frame: .zero, style: .insetGrouped)
         tableView.backgroundColor = .systemGroupedBackground
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.register(EggCardCell.self, forCellReuseIdentifier: EggCardCell.reuseIdentifier)
 
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
@@ -45,6 +46,10 @@ final class NotesViewController: UITableViewController, UISearchResultsUpdating 
         "笔记保存在本机 UserDefaults 中。后续可迁移到 SQLite / SwiftData，并加入 Markdown、标签和附件。"
     }
 
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        visibleNotes.isEmpty ? UITableView.automaticDimension : 92
+    }
+
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         cell.backgroundColor = .secondarySystemGroupedBackground
@@ -63,16 +68,16 @@ final class NotesViewController: UITableViewController, UISearchResultsUpdating 
         }
 
         let note = visibleNotes[indexPath.row]
-        var content = UIListContentConfiguration.subtitleCell()
-        content.text = note.title
-        content.secondaryText = subtitle(for: note)
-        content.secondaryTextProperties.numberOfLines = 2
-        content.image = UIImage(systemName: note.isPinned ? "pin.fill" : "note.text")
-        content.imageProperties.tintColor = note.isPinned ? .systemOrange : AppSettings.shared.accentStyle.tintColor
-        cell.contentConfiguration = content
-        cell.accessoryType = .disclosureIndicator
-        cell.selectionStyle = .default
-        return cell
+        let card = tableView.dequeueReusableCell(withIdentifier: EggCardCell.reuseIdentifier, for: indexPath) as! EggCardCell
+        card.configure(
+            title: note.title,
+            subtitle: subtitle(for: note),
+            icon: note.isPinned ? "pin.fill" : "note.text",
+            tint: note.isPinned ? .systemOrange : AppSettings.shared.accentStyle.tintColor,
+            trailing: note.isPinned ? "置顶" : nil,
+            showsChevron: true
+        )
+        return card
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

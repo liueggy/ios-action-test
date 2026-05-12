@@ -15,6 +15,7 @@ final class LinksViewController: UITableViewController, UISearchResultsUpdating 
         tableView = UITableView(frame: .zero, style: .insetGrouped)
         tableView.backgroundColor = .systemGroupedBackground
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.register(EggCardCell.self, forCellReuseIdentifier: EggCardCell.reuseIdentifier)
 
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
@@ -43,6 +44,10 @@ final class LinksViewController: UITableViewController, UISearchResultsUpdating 
         "用于保存网页、资料、文档和灵感链接。后续可接入 LinkPresentation 生成网页预览。"
     }
 
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        visibleLinks.isEmpty ? UITableView.automaticDimension : 92
+    }
+
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         cell.backgroundColor = .secondarySystemGroupedBackground
@@ -60,16 +65,16 @@ final class LinksViewController: UITableViewController, UISearchResultsUpdating 
         }
 
         let link = visibleLinks[indexPath.row]
-        var content = UIListContentConfiguration.subtitleCell()
-        content.text = link.title
-        content.secondaryText = subtitle(for: link)
-        content.secondaryTextProperties.numberOfLines = 2
-        content.image = UIImage(systemName: link.isPinned ? "pin.fill" : "link.circle.fill")
-        content.imageProperties.tintColor = link.isPinned ? .systemOrange : AppSettings.shared.accentStyle.tintColor
-        cell.contentConfiguration = content
-        cell.accessoryType = .disclosureIndicator
-        cell.selectionStyle = .default
-        return cell
+        let card = tableView.dequeueReusableCell(withIdentifier: EggCardCell.reuseIdentifier, for: indexPath) as! EggCardCell
+        card.configure(
+            title: link.title,
+            subtitle: subtitle(for: link),
+            icon: link.isPinned ? "pin.fill" : "link.circle.fill",
+            tint: link.isPinned ? .systemOrange : AppSettings.shared.accentStyle.tintColor,
+            trailing: link.isPinned ? "置顶" : nil,
+            showsChevron: true
+        )
+        return card
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

@@ -42,6 +42,7 @@ final class ToolboxViewController: UICollectionViewController {
         navigationItem.largeTitleDisplayMode = .always
         navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "arrow.clockwise"), style: .plain, target: self, action: #selector(reloadContent))
         collectionView.backgroundColor = .systemGroupedBackground
+        collectionView.contentInset = UIEdgeInsets(top: 4, left: 0, bottom: 18, right: 0)
         collectionView.register(ToolboxCell.self, forCellWithReuseIdentifier: ToolboxCell.reuseIdentifier)
         NotificationCenter.default.addObserver(self, selector: #selector(reloadContent), name: .appSettingsDidChange, object: nil)
     }
@@ -208,13 +209,17 @@ private final class ToolboxCell: UICollectionViewCell {
     }
 
     private func setup() {
-        contentView.backgroundColor = .secondarySystemGroupedBackground
-        contentView.layer.cornerRadius = 20
+        contentView.backgroundColor = EggDesign.cardBackground()
+        contentView.layer.cornerRadius = 22
         contentView.layer.cornerCurve = .continuous
-        contentView.clipsToBounds = true
+        EggDesign.applyCardShadow(to: contentView)
+        contentView.clipsToBounds = false
 
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
+        iconView.backgroundColor = AppSettings.shared.accentStyle.tintColor.withAlphaComponent(0.10)
+        iconView.layer.cornerRadius = 15
+        iconView.layer.cornerCurve = .continuous
 
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.font = .preferredFont(forTextStyle: .headline)
@@ -249,6 +254,7 @@ private final class ToolboxCell: UICollectionViewCell {
     func configure(with item: ToolboxViewController.ToolItem) {
         iconView.image = UIImage(systemName: item.icon)
         iconView.tintColor = item.tint
+        iconView.backgroundColor = item.tint.withAlphaComponent(0.13)
         titleLabel.text = item.title
         subtitleLabel.text = item.subtitle
     }

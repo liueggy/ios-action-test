@@ -28,6 +28,7 @@ final class TasksViewController: UITableViewController {
         navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: self, action: #selector(shareSummary))
 
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.register(EggCardCell.self, forCellReuseIdentifier: EggCardCell.reuseIdentifier)
         tableView.backgroundColor = .systemGroupedBackground
         tableView.separatorStyle = .singleLine
         configureHeader()
@@ -60,6 +61,13 @@ final class TasksViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         return section == 0 ? "总览" : "任务列表"
+    }
+
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if indexPath.section == 1, !filteredTasks.isEmpty {
+            return 88
+        }
+        return UITableView.automaticDimension
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -99,21 +107,19 @@ final class TasksViewController: UITableViewController {
         }
 
         let task = filteredTasks[indexPath.row]
-        var content = UIListContentConfiguration.subtitleCell()
-        content.text = task.title
-        content.secondaryText = subtitle(for: task)
-        content.secondaryTextProperties.numberOfLines = 2
-        content.image = UIImage(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-        content.imageProperties.tintColor = task.isCompleted ? .systemGreen : (task.isOverdue ? .systemRed : .secondaryLabel)
-        cell.contentConfiguration = content
-
-        let calendarButton = UIButton(type: .system)
-        calendarButton.setImage(UIImage(systemName: task.calendarEventIdentifier == nil ? "calendar.badge.plus" : "calendar.badge.checkmark"), for: .normal)
-        calendarButton.tintColor = .systemBlue
-        calendarButton.tag = indexPath.row
-        calendarButton.addTarget(self, action: #selector(addTaskToCalendar(_:)), for: .touchUpInside)
-        cell.accessoryView = calendarButton
-        return cell
+        let card = tableView.dequeueReusableCell(withIdentifier: EggCardCell.reuseIdentifier, for: indexPath) as! EggCardCell
+        let tint: UIColor = task.isCompleted ? .systemGreen : (task.isOverdue ? .systemRed : AppSettings.shared.accentStyle.tintColor)
+        let icon = task.isCompleted ? "checkmark.circle.fill" : (task.isOverdue ? "clock.badge.exclamationmark.fill" : "circle")
+        card.configure(
+            title: task.title,
+            subtitle: subtitle(for: task),
+            icon: icon,
+            tint: tint,
+            trailing: task.calendarEventIdentifier == nil ? nil : "日历",
+            showsChevron: false
+        )
+        card.setCompleted(task.isCompleted)
+        return card
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
