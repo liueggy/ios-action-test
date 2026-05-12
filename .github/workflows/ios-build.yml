@@ -1,4 +1,4 @@
-name: iOS Build Smoke Test
+name: Build Unsigned iOS IPA
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-ios:
-    name: Build Swift package for iOS
+  build-unsigned-ipa:
+    name: Build unsigned IPA on macOS
     runs-on: macos-14
 
     steps:
@@ -17,22 +17,93 @@ jobs:
       - name: Show runner and Xcode info
         run: |
           sw_vers
-          uname -a
           xcodebuild -version
           xcode-select -p
           swift --version
 
-      - name: Resolve package dependencies
-        run: swift package resolve
-
-      - name: Build for iOS simulator SDK
+      - name: Create minimal iOS app source
         run: |
-          xcodebuild build \
-            -scheme IOSActionTest \
-            -destination 'generic/platform=iOS Simulator' \
-            -sdk iphonesimulator \
-            -configuration Release \
-            CODE_SIGNING_ALLOWED=NO
+          set -e
+          mkdir -p GeneratedApp
+          cat > GeneratedApp/AppDelegate.swift <<'EOF'
+          import UIKit
 
-      - name: Run Swift package tests on macOS host
-        run: swift test -v
+          @main
+          class AppDelegate: UIResponder, UIApplicationDelegate {
+              var window: UIWindow?
+
+              func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+                  let window = UIWindow(frame: UIScreen.main.bounds)
+                  let vc = UIViewController()
+                  vc.view.backgroundColor = UIColor.systemBackground
+
+                  let label = UILabel()
+                  label.text = "Hello from GitHub Actions IPA"
+                  label.textAlignment = .center
+                  label.font = UIFont.systemFont(ofSize: 22, weight: .semibold)
+                  label.numberOfLines = 0
+                  label.translatesAutoresizingMaskIntoConstraints = false
+
+                  vc.view.addSubview(label)
+                  NSLayoutConstraint.activate([
+                      label.centerXAnchor.constraint(equalTo: vc.view.centerXAnchor),
+                      label.centerYAnchor.constraint(equalTo: vc.view.centerYAnchor),
+                      label.leadingAnchor.constraint(greaterThanOrEqualTo: vc.view.leadingAnchor, constant: 24),
+                      label.trailingAnchor.constraint(lessThanOrEqualTo: vc.view.trailingAnchor, constant: -24)
+                  ])
+
+                  window.rootViewController = vc
+                  window.makeKeyAndVisible()
+                  self.window = window
+                  return true
+              }
+          }
+          EOF
+
+      - name: Build unsigned .app for physical iPhone arm64
+        run: |
+          set -e
+          APP_NAME=IOSActionTest
+          BUNDLE_ID=com.liueggy.iosactiontest
+          IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          SWIFT_COMPILER=$(xcrun --find swiftc)
+
+          mkdir -p build/Payload/$APP_NAME.app
+
+          /usr/libexec/PlistBuddy -c "Clear dict" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleDevelopmentRegion string en" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string $APP_NAME" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string $BUNDLE_ID" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleInfoDictionaryVersion string 6.0" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleName string $APP_NAME" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundlePackageType string APPL" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :LSRequiresIPhoneOS bool true" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string 16.0" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UIApplicationSceneManifest dict" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UIApplicationSupportsIndirectInputEvents bool true" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UILaunchScreen dict" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" build/Payload/$APP_NAME.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" build/Payload/$APP_NAME.app/Info.plist
+
+          $SWIFT_COMPILER \
+            GeneratedApp/AppDelegate.swift \
+            -target arm64-apple-ios16.0 \
+            -sdk "$IOS_SDK" \
+            -framework UIKit \
+            -emit-executable \
+            -o build/Payload/$APP_NAME.app/$APP_NAME
+
+          chmod +x build/Payload/$APP_NAME.app/$APP_NAME
+
+          cd build
+          zip -qry IOSActionTest-unsigned.ipa Payload
+          ls -lh IOSActionTest-unsigned.ipa
+
+      - name: Upload unsigned IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IOSActionTest-unsigned-ipa
+          path: build/IOSActionTest-unsigned.ipa
+          if-no-files-found: error
