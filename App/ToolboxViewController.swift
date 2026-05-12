@@ -18,6 +18,7 @@ final class ToolboxViewController: UICollectionViewController {
             case appSettings
             case shareSummary
             case copySummary
+            case qrTools
             case links
             case textTools
             case comingSoon(String)
@@ -94,7 +95,7 @@ final class ToolboxViewController: UICollectionViewController {
             ToolItem(title: "链接收藏", subtitle: "网页 / 资料 / 文档", icon: "link.circle.fill", tint: .systemCyan, action: .links),
             ToolItem(title: "文本工具", subtitle: "字数 / JSON / Base64", icon: "textformat.abc", tint: .systemTeal, action: .textTools),
             ToolItem(title: "OCR", subtitle: "图片识别文字", icon: "viewfinder", tint: .systemPink, action: .comingSoon("OCR")),
-            ToolItem(title: "二维码", subtitle: "生成与识别", icon: "qrcode.viewfinder", tint: .systemGray, action: .comingSoon("二维码")),
+            ToolItem(title: "二维码", subtitle: "文本 / 链接生成", icon: "qrcode.viewfinder", tint: .systemGray, action: .qrTools),
             ToolItem(title: "App 设置", subtitle: "权限和系统设置", icon: "gearshape.2.fill", tint: .secondaryLabel, action: .appSettings)
         ]
     }
@@ -110,6 +111,8 @@ final class ToolboxViewController: UICollectionViewController {
         case .appSettings: openURLString(UIApplication.openSettingsURLString, failureMessage: "无法打开设置页面。")
         case .shareSummary: shareSummary()
         case .copySummary: copySummary()
+        case .qrTools:
+            navigationController?.pushViewController(QRToolsViewController(), animated: true)
         case .links:
             navigationController?.pushViewController(LinksViewController(style: .insetGrouped), animated: true)
         case .textTools:
