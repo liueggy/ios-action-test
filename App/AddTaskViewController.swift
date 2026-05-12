@@ -12,17 +12,18 @@ final class AddTaskViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "New Task"
+        title = "新建任务"
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancel))
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(save))
 
         tableView = UITableView(frame: .zero, style: .insetGrouped)
         tableView.backgroundColor = .systemGroupedBackground
 
-        titleField.placeholder = "Task title"
+        titleField.placeholder = "输入任务标题"
         titleField.clearButtonMode = .whileEditing
+        titleField.returnKeyType = .done
 
-        notesField.placeholder = "Notes optional"
+        notesField.placeholder = "备注（可选）"
         notesField.clearButtonMode = .whileEditing
 
         datePicker.datePickerMode = .dateAndTime
@@ -31,12 +32,12 @@ final class AddTaskViewController: UITableViewController {
 
         prioritySlider.minimumValue = 0
         prioritySlider.maximumValue = 3
-        prioritySlider.value = 0
+        prioritySlider.value = 1
         prioritySlider.isContinuous = true
         prioritySlider.addTarget(self, action: #selector(priorityChanged), for: .valueChanged)
 
-        priorityLabel.text = "None"
-        priorityLabel.textColor = .secondaryLabel
+        priorityLabel.text = "低"
+        priorityLabel.textColor = .systemBlue
         calendarSwitch.isOn = true
     }
 
@@ -52,10 +53,17 @@ final class AddTaskViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
-        case 0: return "Task"
-        case 1: return "Schedule"
-        default: return "Integration"
+        case 0: return "任务信息"
+        case 1: return "时间与优先级"
+        default: return "系统联动"
         }
+    }
+
+    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
+        if section == 2 {
+            return "打开后会尝试把任务同步写入系统日历。"
+        }
+        return nil
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -82,18 +90,18 @@ final class AddTaskViewController: UITableViewController {
                 notesField.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor, constant: -8)
             ])
         } else if indexPath.section == 1 && indexPath.row == 0 {
-            cell.textLabel?.text = "Due date"
+            cell.textLabel?.text = "截止时间"
             cell.accessoryView = datePicker
         } else if indexPath.section == 1 {
-            cell.textLabel?.text = "Priority"
+            cell.textLabel?.text = "优先级"
             let stack = UIStackView(arrangedSubviews: [prioritySlider, priorityLabel])
             stack.axis = .horizontal
             stack.spacing = 10
-            stack.frame = CGRect(x: 0, y: 0, width: 180, height: 32)
-            priorityLabel.widthAnchor.constraint(equalToConstant: 62).isActive = true
+            stack.frame = CGRect(x: 0, y: 0, width: 190, height: 32)
+            priorityLabel.widthAnchor.constraint(equalToConstant: 44).isActive = true
             cell.accessoryView = stack
         } else {
-            cell.textLabel?.text = "Add to Calendar"
+            cell.textLabel?.text = "同步到日历"
             cell.accessoryView = calendarSwitch
         }
         return cell
@@ -104,25 +112,33 @@ final class AddTaskViewController: UITableViewController {
         prioritySlider.value = Float(value)
         switch value {
         case 1:
-            priorityLabel.text = "Low"
+            priorityLabel.text = "低"
             priorityLabel.textColor = .systemBlue
         case 2:
-            priorityLabel.text = "Medium"
+            priorityLabel.text = "中"
             priorityLabel.textColor = .systemOrange
         case 3:
-            priorityLabel.text = "High"
+            priorityLabel.text = "高"
             priorityLabel.textColor = .systemRed
         default:
-            priorityLabel.text = "None"
+            priorityLabel.text = "无"
             priorityLabel.textColor = .secondaryLabel
         }
     }
 
-    @objc private func cancel() { dismiss(animated: true) }
+    @objc private func cancel() {
+        dismiss(animated: true)
+    }
 
     @objc private func save() {
         let title = (titleField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !title.isEmpty else { return }
+        guard !title.isEmpty else {
+            let alert = UIAlertController(title: "提示", message: "请先输入任务标题。", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "好", style: .default))
+            present(alert, animated: true)
+            return
+        }
+
         let task = TaskItem(
             title: title,
             notes: (notesField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
