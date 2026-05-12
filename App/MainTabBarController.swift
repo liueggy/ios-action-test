@@ -24,7 +24,7 @@ final class MainTabBarController: UITabBarController {
 
         viewControllers = [tasks, actions, settings]
         selectedIndex = 0
-        tabBar.isTranslucent = true
+        tabBar.isTranslucent = false
     }
 
     @objc private func handleSettingsChange() {
