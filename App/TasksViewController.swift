@@ -71,11 +71,29 @@ final class TasksViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if indexPath.section == 1, !filteredTasks.isEmpty {
+            let task = filteredTasks[indexPath.row]
+            let card = tableView.dequeueReusableCell(withIdentifier: EggCardCell.reuseIdentifier, for: indexPath) as! EggCardCell
+            let tint: UIColor = task.isCompleted ? .systemGreen : (task.isOverdue ? .systemRed : AppSettings.shared.accentStyle.tintColor)
+            let icon = task.isCompleted ? "checkmark.circle.fill" : (task.isOverdue ? "clock.badge.exclamationmark.fill" : "circle")
+            card.configure(
+                title: task.title,
+                subtitle: subtitle(for: task),
+                icon: icon,
+                tint: tint,
+                trailing: task.calendarEventIdentifier == nil ? nil : "日历",
+                showsChevron: false
+            )
+            card.setCompleted(task.isCompleted)
+            return card
+        }
+
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         cell.accessoryView = nil
         cell.accessoryType = .none
         cell.selectionStyle = .default
         cell.backgroundColor = .secondarySystemGroupedBackground
+        cell.contentConfiguration = nil
 
         if indexPath.section == 0 {
             if indexPath.row == 0 {
@@ -106,20 +124,7 @@ final class TasksViewController: UITableViewController {
             return cell
         }
 
-        let task = filteredTasks[indexPath.row]
-        let card = tableView.dequeueReusableCell(withIdentifier: EggCardCell.reuseIdentifier, for: indexPath) as! EggCardCell
-        let tint: UIColor = task.isCompleted ? .systemGreen : (task.isOverdue ? .systemRed : AppSettings.shared.accentStyle.tintColor)
-        let icon = task.isCompleted ? "checkmark.circle.fill" : (task.isOverdue ? "clock.badge.exclamationmark.fill" : "circle")
-        card.configure(
-            title: task.title,
-            subtitle: subtitle(for: task),
-            icon: icon,
-            tint: tint,
-            trailing: task.calendarEventIdentifier == nil ? nil : "日历",
-            showsChevron: false
-        )
-        card.setCompleted(task.isCompleted)
-        return card
+        return cell
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

@@ -206,7 +206,6 @@ private final class ToolboxCell: UICollectionViewCell {
 
     private let iconView = UIImageView()
     private let titleLabel = UILabel()
-    private let subtitleLabel = UILabel()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -234,30 +233,24 @@ private final class ToolboxCell: UICollectionViewCell {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.font = .preferredFont(forTextStyle: .headline)
         titleLabel.textColor = .label
-
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subtitleLabel.font = .preferredFont(forTextStyle: .caption1)
-        subtitleLabel.textColor = .secondaryLabel
-        subtitleLabel.numberOfLines = 2
-        subtitleLabel.lineBreakMode = .byTruncatingMiddle
+        titleLabel.textAlignment = .center
+        titleLabel.numberOfLines = 1
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.82
 
         contentView.addSubview(iconView)
         contentView.addSubview(titleLabel)
-        contentView.addSubview(subtitleLabel)
 
         NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            iconView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
-            iconView.widthAnchor.constraint(equalToConstant: 30),
-            iconView.heightAnchor.constraint(equalToConstant: 30),
+            iconView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            iconView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 24),
+            iconView.widthAnchor.constraint(equalToConstant: 38),
+            iconView.heightAnchor.constraint(equalToConstant: 38),
 
-            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            titleLabel.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: 12),
-
-            subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            subtitleLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 3)
+            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
+            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
+            titleLabel.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: 14),
+            titleLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -14)
         ])
     }
 
@@ -266,6 +259,5 @@ private final class ToolboxCell: UICollectionViewCell {
         iconView.tintColor = item.tint
         iconView.backgroundColor = item.tint.withAlphaComponent(0.13)
         titleLabel.text = item.title
-        subtitleLabel.text = item.subtitle
     }
 }
