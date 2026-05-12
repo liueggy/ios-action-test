@@ -18,6 +18,7 @@ final class ToolboxViewController: UICollectionViewController {
             case appSettings
             case shareSummary
             case copySummary
+            case textTools
             case comingSoon(String)
         }
     }
@@ -88,7 +89,7 @@ final class ToolboxViewController: UICollectionViewController {
             ToolItem(title: "日历", subtitle: "打开系统日历", icon: "calendar", tint: .systemRed, action: .calendar),
             ToolItem(title: "复制摘要", subtitle: "待办概览到剪贴板", icon: "doc.on.doc.fill", tint: .systemPurple, action: .copySummary),
             ToolItem(title: "分享摘要", subtitle: "通过系统分享面板", icon: "square.and.arrow.up.fill", tint: accent, action: .shareSummary),
-            ToolItem(title: "文本工具", subtitle: "字数 / JSON / Base64", icon: "textformat.abc", tint: .systemTeal, action: .comingSoon("文本工具")),
+            ToolItem(title: "文本工具", subtitle: "字数 / JSON / Base64", icon: "textformat.abc", tint: .systemTeal, action: .textTools),
             ToolItem(title: "OCR", subtitle: "图片识别文字", icon: "viewfinder", tint: .systemPink, action: .comingSoon("OCR")),
             ToolItem(title: "二维码", subtitle: "生成与识别", icon: "qrcode.viewfinder", tint: .systemGray, action: .comingSoon("二维码")),
             ToolItem(title: "App 设置", subtitle: "权限和系统设置", icon: "gearshape.2.fill", tint: .secondaryLabel, action: .appSettings)
@@ -106,6 +107,8 @@ final class ToolboxViewController: UICollectionViewController {
         case .appSettings: openURLString(UIApplication.openSettingsURLString, failureMessage: "无法打开设置页面。")
         case .shareSummary: shareSummary()
         case .copySummary: copySummary()
+        case .textTools:
+            navigationController?.pushViewController(TextToolsViewController(style: .insetGrouped), animated: true)
         case .comingSoon(let title): showComingSoon(title)
         }
     }
