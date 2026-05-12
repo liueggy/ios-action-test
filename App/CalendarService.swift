@@ -1,61 +1,50 @@
 import EventKit
-import UIKit
+import Foundation
 
 final class CalendarService {
     static let shared = CalendarService()
-
     private let store = EKEventStore()
 
     private init() {}
 
-    func addTaskToCalendar(_ task: TaskItem, from presenter: UIViewController, completion: @escaping (Result<String, Error>) -> Void) {
-        requestAccess { [weak self] granted, error in
-            guard let self else { return }
-            if let error {
-                DispatchQueue.main.async { completion(.failure(error)) }
-                return
-            }
-
-            guard granted else {
-                DispatchQueue.main.async {
-                    completion(.failure(CalendarError.permissionDenied))
-                }
-                return
-            }
-
-            let event = EKEvent(eventStore: self.store)
-            event.title = task.title
-            event.notes = task.notes.isEmpty ? "Created by Glass Tasks" : task.notes
-            event.startDate = task.dueDate
-            event.endDate = task.dueDate.addingTimeInterval(30 * 60)
-            event.calendar = self.store.defaultCalendarForNewEvents
-            event.alarms = [EKAlarm(relativeOffset: -15 * 60)]
-
-            do {
-                try self.store.save(event, span: .thisEvent, commit: true)
-                DispatchQueue.main.async { completion(.success(event.eventIdentifier)) }
-            } catch {
-                DispatchQueue.main.async { completion(.failure(error)) }
-            }
-        }
-    }
-
-    private func requestAccess(completion: @escaping (Bool, Error?) -> Void) {
+    func requestAccess() async -> Bool {
         if #available(iOS 17.0, *) {
-            store.requestWriteOnlyAccessToEvents(completion: completion)
+            return (try? await store.requestWriteOnlyAccessToEvents()) ?? false
         } else {
-            store.requestAccess(to: .event, completion: completion)
+            return await withCheckedContinuation { continuation in
+                store.requestAccess(to: .event) { granted, _ in
+                    continuation.resume(returning: granted)
+                }
+            }
         }
     }
-}
 
-enum CalendarError: LocalizedError {
-    case permissionDenied
+    func addToCalendar(task: TaskItem) async -> String? {
+        let granted = await requestAccess()
+        guard granted else { return nil }
 
-    var errorDescription: String? {
-        switch self {
-        case .permissionDenied:
-            return "Calendar access was denied. Enable Calendar permission in Settings."
+        let event = EKEvent(eventStore: store)
+        event.title = task.title
+        event.notes = task.notes.isEmpty ? nil : task.notes
+        event.startDate = task.dueDate
+        event.endDate = task.dueDate.addingTimeInterval(3600)
+        event.calendar = store.defaultCalendarForNewEvents
+
+        if task.priority >= 2 {
+            let alarm = EKAlarm(relativeOffset: -900) // 15 min before
+            event.addAlarm(alarm)
         }
+
+        do {
+            try store.save(event, span: .thisEvent)
+            return event.eventIdentifier
+        } catch {
+            return nil
+        }
+    }
+
+    func removeFromCalendar(identifier: String) {
+        guard let event = store.event(withIdentifier: identifier) else { return }
+        try? store.remove(event, span: .thisEvent)
     }
 }
