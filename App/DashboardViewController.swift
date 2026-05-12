@@ -114,7 +114,10 @@ final class DashboardViewController: UITableViewController {
         switch section {
         case .quickCapture:
             if indexPath.row == 0 { addTask() }
-            if indexPath.row == 1 { showComingSoon("快速笔记") }
+            if indexPath.row == 1 {
+                let controller = NotesViewController(style: .insetGrouped)
+                navigationController?.pushViewController(controller, animated: true)
+            }
             if indexPath.row == 2 { showComingSoon("链接收藏") }
         case .upcoming:
             guard !store.pendingTasks.isEmpty else { return }
@@ -160,7 +163,7 @@ final class DashboardViewController: UITableViewController {
     private func configureQuickEntry(_ cell: UITableViewCell, row: Int) {
         let items = [
             ("新建任务", "快速捕捉一个待办", "plus.circle.fill"),
-            ("快速笔记", "记录灵感，后续版本启用", "note.text.badge.plus"),
+            ("快速笔记", "记录灵感、资料和临时信息", "note.text.badge.plus"),
             ("收藏链接", "保存网页、资料和参考", "link.circle.fill")
         ]
         let item = items[row]

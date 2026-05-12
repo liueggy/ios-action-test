@@ -34,13 +34,19 @@ final class MainTabBarController: UITabBarController {
         toolbox.navigationBar.scrollEdgeAppearance = navAppearance
         toolbox.tabBarItem = UITabBarItem(title: "工具", image: UIImage(systemName: "square.grid.2x2"), selectedImage: UIImage(systemName: "square.grid.2x2.fill"))
 
+        let notes = UINavigationController(rootViewController: NotesViewController(style: .insetGrouped))
+        notes.navigationBar.prefersLargeTitles = true
+        notes.navigationBar.standardAppearance = navAppearance
+        notes.navigationBar.scrollEdgeAppearance = navAppearance
+        notes.tabBarItem = UITabBarItem(title: "记录", image: UIImage(systemName: "note.text"), selectedImage: UIImage(systemName: "note.text"))
+
         let settings = UINavigationController(rootViewController: SettingsViewController(style: .insetGrouped))
         settings.navigationBar.prefersLargeTitles = true
         settings.navigationBar.standardAppearance = navAppearance
         settings.navigationBar.scrollEdgeAppearance = navAppearance
         settings.tabBarItem = UITabBarItem(title: "设置", image: UIImage(systemName: "slider.horizontal.3"), selectedImage: UIImage(systemName: "slider.horizontal.3"))
 
-        viewControllers = [today, tasks, toolbox, settings]
+        viewControllers = [today, tasks, toolbox, notes, settings]
         selectedIndex = 0
 
         // Use UITabBarAppearance to ensure correct background in both light and dark mode

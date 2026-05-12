@@ -179,6 +179,7 @@ jobs:
             Egg Tool v0.4 unsigned IPA built by GitHub Actions.
 
             ## 当前版本
+            - 新增快速笔记：本地记录、搜索、置顶、复制、分享
             - 新增文本工具：字数统计、URL 编解码、Base64 编解码、JSON 格式化、UUID、时间戳
             - 项目名升级为 Egg Tool
             - 新增“今日”仪表盘：首页展示问候、任务概览、快速入口和接下来任务
