@@ -28,18 +28,72 @@ jobs:
             xcrun --sdk iphoneos --show-sdk-path
           } | tee build-logs/environment.txt
 
-      - name: Generate app bundle metadata
+      - name: Install icon generator dependency
+        run: |
+          python3 -m pip install --user pillow
+
+      - name: Generate app bundle metadata and icons
         run: |
           mkdir -p build/Payload/GlassTasks.app build-logs
           python3 - <<'PY'
           from pathlib import Path
+          from PIL import Image, ImageDraw, ImageFilter
 
-          plist = r'''<?xml version="1.0" encoding="UTF-8"?>
+          app_dir = Path('build/Payload/GlassTasks.app')
+          app_dir.mkdir(parents=True, exist_ok=True)
+
+          size = 1024
+          img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+
+          def lerp(a, b, t):
+              return int(a + (b - a) * t)
+
+          for y in range(size):
+              for x in range(size):
+                  tx = x / size
+                  ty = y / size
+                  t = (tx + ty) / 2
+                  r = lerp(8, 105, t)
+                  g = lerp(92, 230, tx)
+                  b = lerp(225, 245, 1 - ty)
+                  img.putpixel((x, y), (r, g, b, 255))
+
+          glass = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+          gd = ImageDraw.Draw(glass)
+          gd.rounded_rectangle((28, 28, size - 28, size - 28), radius=190, fill=(255, 255, 255, 50), outline=(255, 255, 255, 180), width=10)
+          gd.rounded_rectangle((175, 185, 825, 820), radius=115, fill=(255, 255, 255, 43), outline=(255, 255, 255, 160), width=8)
+          for cy in (320, 500, 680):
+              gd.ellipse((255, cy - 42, 339, cy + 42), fill=(255, 255, 255, 150), outline=(255, 255, 255, 180), width=4)
+          gd.rounded_rectangle((395, 295, 720, 350), radius=28, fill=(255, 255, 255, 145))
+          gd.rounded_rectangle((395, 475, 735, 530), radius=28, fill=(255, 255, 255, 145))
+          gd.rounded_rectangle((395, 655, 620, 710), radius=28, fill=(255, 255, 255, 120))
+          gd.line((470, 720, 595, 840, 845, 570), fill=(220, 255, 255, 230), width=82, joint='curve')
+          gd.arc((70, 40, 910, 790), start=205, end=320, fill=(255, 255, 255, 65), width=86)
+          glass = glass.filter(ImageFilter.GaussianBlur(radius=1.1))
+          img = Image.alpha_composite(img, glass)
+
+          gloss = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+          gg = ImageDraw.Draw(gloss)
+          gg.pieslice((100, 60, 930, 720), start=190, end=340, fill=(255, 255, 255, 52))
+          gg.rounded_rectangle((40, 40, size - 40, size - 40), radius=180, outline=(255, 255, 255, 110), width=6)
+          img = Image.alpha_composite(img, gloss)
+
+          icon_targets = [
+              (120, 'AppIcon60x60@2x.png'),
+              (180, 'AppIcon60x60@3x.png'),
+              (152, 'AppIcon76x76@2x.png'),
+              (167, 'AppIcon83.5x83.5@2x.png'),
+              (1024, 'AppIcon1024.png'),
+          ]
+          for target, name in icon_targets:
+              img.resize((target, target), Image.LANCZOS).save(app_dir / name)
+
+          plist = '''<?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>CFBundleDevelopmentRegion</key>
-              <string>en</string>
+              <string>zh_CN</string>
               <key>CFBundleExecutable</key>
               <string>GlassTasks</string>
               <key>CFBundleIdentifier</key>
@@ -49,13 +103,34 @@ jobs:
               <key>CFBundleName</key>
               <string>GlassTasks</string>
               <key>CFBundleDisplayName</key>
-              <string>Glass Tasks</string>
+              <string>玻璃待办</string>
               <key>CFBundlePackageType</key>
               <string>APPL</string>
               <key>CFBundleShortVersionString</key>
-              <string>2.0</string>
+              <string>3.0</string>
               <key>CFBundleVersion</key>
-              <string>2</string>
+              <string>3</string>
+              <key>CFBundleIcons</key>
+              <dict>
+                  <key>CFBundlePrimaryIcon</key>
+                  <dict>
+                      <key>CFBundleIconFiles</key>
+                      <array>
+                          <string>AppIcon60x60</string>
+                      </array>
+                  </dict>
+              </dict>
+              <key>CFBundleIcons~ipad</key>
+              <dict>
+                  <key>CFBundlePrimaryIcon</key>
+                  <dict>
+                      <key>CFBundleIconFiles</key>
+                      <array>
+                          <string>AppIcon76x76</string>
+                          <string>AppIcon83.5x83.5</string>
+                      </array>
+                  </dict>
+              </dict>
               <key>LSRequiresIPhoneOS</key>
               <true/>
               <key>MinimumOSVersion</key>
@@ -75,19 +150,17 @@ jobs:
                   <integer>1</integer>
                   <integer>2</integer>
               </array>
-              <key>NSCalendarsUsageDescription</key>
-              <string>Glass Tasks needs Calendar access to add task due dates to your system calendar.</string>
               <key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-              <string>Glass Tasks needs write-only Calendar access to create events for your tasks.</string>
+              <string>玻璃待办需要日历写入权限，以便把任务同步到你的系统日历。</string>
           </dict>
           </plist>
           '''
-
-          Path('build/Payload/GlassTasks.app/Info.plist').write_text(plist, encoding='utf-8')
+          (app_dir / 'Info.plist').write_text(plist, encoding='utf-8')
           PY
           plutil -lint build/Payload/GlassTasks.app/Info.plist | tee build-logs/plutil.txt
+          ls -lh build/Payload/GlassTasks.app | tee build-logs/bundle-files.txt
 
-      - name: Build unsigned SwiftUI app for physical iPhone arm64
+      - name: Build unsigned UIKit app for physical iPhone arm64
         run: |
           set -o pipefail
           IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
@@ -101,7 +174,6 @@ jobs:
             App/*.swift \
             -target arm64-apple-ios17.0 \
             -sdk "$IOS_SDK" \
-            -framework SwiftUI \
             -framework UIKit \
             -framework EventKit \
             -framework Combine \
@@ -138,18 +210,17 @@ jobs:
         if: success()
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: glass-tasks-v2
-          name: "Glass Tasks v2.0 - SwiftUI + Liquid Glass ready"
+          tag_name: glass-tasks-v3
+          name: "玻璃待办 v3.0 - 中文液态玻璃风格"
           body: |
-            Glass Tasks v2.0 unsigned IPA built by GitHub Actions.
+            玻璃待办 v3.0 unsigned IPA built by GitHub Actions.
 
-            ## What's New
-            - SwiftUI app lifecycle
-            - NavigationStack / Form / List / Sheet native system UI
-            - Standard Slider and Toggle controls, which adopt Liquid Glass on iOS 26
-            - Priority slider
-            - Pending / Completed / All filters
-            - EventKit calendar integration
+            ## 新增内容
+            - 中文界面
+            - 待办、总览、今日、逾期、摘要分享
+            - 快捷操作：电话、短信、邮件、网页、地图、日历、系统设置
+            - 设置页：外观模式、强调色、学习/工作/生活/默认模式
+            - 构建时生成液态玻璃风格应用图标
             - Bundle ID: `com.a7OM.9Sqorrj`
             - Minimum iOS: `17.0`
 
@@ -157,3 +228,4 @@ jobs:
           files: build/GlassTasks-unsigned.ipa
           prerelease: false
           make_latest: true
+          overwrite_files: true
