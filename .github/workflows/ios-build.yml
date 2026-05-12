@@ -23,7 +23,6 @@ jobs:
 
       - name: Create minimal iOS app source
         run: |
-          set -e
           mkdir -p GeneratedApp
           cat > GeneratedApp/AppDelegate.swift <<'EOF'
           import UIKit
@@ -38,7 +37,7 @@ jobs:
                   vc.view.backgroundColor = UIColor.systemBackground
 
                   let label = UILabel()
-                  label.text = "Hello from GitHub Actions IPA"
+                  label.text = "Hello from GitHub Actions unsigned IPA"
                   label.textAlignment = .center
                   label.font = UIFont.systemFont(ofSize: 22, weight: .semibold)
                   label.numberOfLines = 0
@@ -62,7 +61,7 @@ jobs:
 
       - name: Build unsigned .app for physical iPhone arm64
         run: |
-          set -e
+          set -eu
           APP_NAME=IOSActionTest
           BUNDLE_ID=com.liueggy.iosactiontest
           IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
@@ -70,22 +69,46 @@ jobs:
 
           mkdir -p build/Payload/$APP_NAME.app
 
-          /usr/libexec/PlistBuddy -c "Clear dict" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :CFBundleDevelopmentRegion string en" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string $APP_NAME" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string $BUNDLE_ID" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :CFBundleInfoDictionaryVersion string 6.0" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :CFBundleName string $APP_NAME" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :CFBundlePackageType string APPL" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :LSRequiresIPhoneOS bool true" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string 16.0" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :UIApplicationSceneManifest dict" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :UIApplicationSupportsIndirectInputEvents bool true" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :UILaunchScreen dict" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" build/Payload/$APP_NAME.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" build/Payload/$APP_NAME.app/Info.plist
+          cat > build/Payload/$APP_NAME.app/Info.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleDevelopmentRegion</key>
+              <string>en</string>
+              <key>CFBundleExecutable</key>
+              <string>$APP_NAME</string>
+              <key>CFBundleIdentifier</key>
+              <string>$BUNDLE_ID</string>
+              <key>CFBundleInfoDictionaryVersion</key>
+              <string>6.0</string>
+              <key>CFBundleName</key>
+              <string>$APP_NAME</string>
+              <key>CFBundleDisplayName</key>
+              <string>iOS Action Test</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleShortVersionString</key>
+              <string>1.0</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
+              <key>LSRequiresIPhoneOS</key>
+              <true/>
+              <key>MinimumOSVersion</key>
+              <string>16.0</string>
+              <key>UIApplicationSupportsIndirectInputEvents</key>
+              <true/>
+              <key>UILaunchScreen</key>
+              <dict/>
+              <key>UISupportedInterfaceOrientations</key>
+              <array>
+                  <string>UIInterfaceOrientationPortrait</string>
+              </array>
+          </dict>
+          </plist>
+          EOF
+
+          plutil -lint build/Payload/$APP_NAME.app/Info.plist
 
           $SWIFT_COMPILER \
             GeneratedApp/AppDelegate.swift \
@@ -96,6 +119,7 @@ jobs:
             -o build/Payload/$APP_NAME.app/$APP_NAME
 
           chmod +x build/Payload/$APP_NAME.app/$APP_NAME
+          file build/Payload/$APP_NAME.app/$APP_NAME
 
           cd build
           zip -qry IOSActionTest-unsigned.ipa Payload
