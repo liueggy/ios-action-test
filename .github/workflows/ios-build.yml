@@ -16,16 +16,22 @@ jobs:
 
       - name: Show runner and Xcode info
         run: |
-          sw_vers
-          xcodebuild -version
-          xcode-select -p
-          swift --version
+          mkdir -p build-logs
+          {
+            sw_vers
+            xcodebuild -version
+            xcode-select -p
+            swift --version
+            xcrun --sdk iphoneos --show-sdk-path
+          } | tee build-logs/environment.txt
 
-      - name: Create minimal iOS app source
+      - name: Generate minimal iOS app files
         run: |
-          mkdir -p GeneratedApp
-          cat > GeneratedApp/AppDelegate.swift <<'EOF'
-          import UIKit
+          mkdir -p GeneratedApp build/Payload/IOSActionTest.app build-logs
+          python3 - <<'PY'
+          from pathlib import Path
+
+          swift = r'''import UIKit
 
           @main
           class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -57,33 +63,22 @@ jobs:
                   return true
               }
           }
-          EOF
+          '''
 
-      - name: Build unsigned .app for physical iPhone arm64
-        run: |
-          set -eu
-          APP_NAME=IOSActionTest
-          BUNDLE_ID=com.liueggy.iosactiontest
-          IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-          SWIFT_COMPILER=$(xcrun --find swiftc)
-
-          mkdir -p build/Payload/$APP_NAME.app
-
-          cat > build/Payload/$APP_NAME.app/Info.plist <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
+          plist = r'''<?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>CFBundleDevelopmentRegion</key>
               <string>en</string>
               <key>CFBundleExecutable</key>
-              <string>$APP_NAME</string>
+              <string>IOSActionTest</string>
               <key>CFBundleIdentifier</key>
-              <string>$BUNDLE_ID</string>
+              <string>com.liueggy.iosactiontest</string>
               <key>CFBundleInfoDictionaryVersion</key>
               <string>6.0</string>
               <key>CFBundleName</key>
-              <string>$APP_NAME</string>
+              <string>IOSActionTest</string>
               <key>CFBundleDisplayName</key>
               <string>iOS Action Test</string>
               <key>CFBundlePackageType</key>
@@ -106,28 +101,47 @@ jobs:
               </array>
           </dict>
           </plist>
-          EOF
+          '''
 
-          plutil -lint build/Payload/$APP_NAME.app/Info.plist
+          Path('GeneratedApp/AppDelegate.swift').write_text(swift, encoding='utf-8')
+          Path('build/Payload/IOSActionTest.app/Info.plist').write_text(plist, encoding='utf-8')
+          PY
+          plutil -lint build/Payload/IOSActionTest.app/Info.plist | tee build-logs/plutil.txt
+
+      - name: Build unsigned .app for physical iPhone arm64
+        run: |
+          set -o pipefail
+          IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          SWIFT_COMPILER=$(xcrun --find swiftc)
 
           $SWIFT_COMPILER \
+            -parse-as-library \
             GeneratedApp/AppDelegate.swift \
             -target arm64-apple-ios16.0 \
             -sdk "$IOS_SDK" \
             -framework UIKit \
             -emit-executable \
-            -o build/Payload/$APP_NAME.app/$APP_NAME
+            -o build/Payload/IOSActionTest.app/IOSActionTest 2>&1 | tee build-logs/swiftc.txt
 
-          chmod +x build/Payload/$APP_NAME.app/$APP_NAME
-          file build/Payload/$APP_NAME.app/$APP_NAME
+          chmod +x build/Payload/IOSActionTest.app/IOSActionTest
+          file build/Payload/IOSActionTest.app/IOSActionTest | tee build-logs/file.txt
 
           cd build
           zip -qry IOSActionTest-unsigned.ipa Payload
-          ls -lh IOSActionTest-unsigned.ipa
+          ls -lh IOSActionTest-unsigned.ipa | tee ../build-logs/ipa.txt
 
       - name: Upload unsigned IPA artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: IOSActionTest-unsigned-ipa
           path: build/IOSActionTest-unsigned.ipa
           if-no-files-found: error
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: IOSActionTest-build-logs
+          path: build-logs
+          if-no-files-found: ignore
