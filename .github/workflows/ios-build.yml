@@ -17,119 +17,87 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show runner and Xcode info
-        run: |
-          mkdir -p build-logs
-          {
-            sw_vers
-            xcodebuild -version
-            xcode-select -p
-            swift --version
-            xcrun --sdk iphoneos --show-sdk-path
-            ls /Applications/ | grep Xcode || true
-          } | tee build-logs/environment.txt
-
       - name: Select latest Xcode
         run: |
-          # Use the latest available Xcode on the runner
+          mkdir -p build-logs
           LATEST_XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
           if [ -n "$LATEST_XCODE" ]; then
             sudo xcode-select -s "$LATEST_XCODE/Contents/Developer"
-            echo "Selected: $LATEST_XCODE"
           fi
-          xcodebuild -version | tee -a build-logs/environment.txt
+          {
+            sw_vers
+            xcodebuild -version
+            swift --version
+          } | tee build-logs/environment.txt
 
-      - name: Generate Info.plist
+      - name: Generate Xcode project
         run: |
-          mkdir -p build/Payload/GlassTasks.app build-logs
-          python3 - <<'PY'
-          from pathlib import Path
+          # Create a minimal Swift Package that builds as an iOS app
+          cat > Package.swift << 'EOF'
+          // swift-tools-version:5.9
+          import PackageDescription
+          let package = Package(
+              name: "GlassTasks",
+              platforms: [.iOS(.v17)],
+              targets: [
+                  .executableTarget(
+                      name: "GlassTasks",
+                      path: "App",
+                      linkerSettings: [
+                          .linkedFramework("UIKit"),
+                          .linkedFramework("SwiftUI"),
+                          .linkedFramework("EventKit"),
+                      ]
+                  )
+              ]
+          )
+          EOF
 
-          plist = r'''<?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>CFBundleDevelopmentRegion</key>
-              <string>en</string>
-              <key>CFBundleExecutable</key>
-              <string>GlassTasks</string>
-              <key>CFBundleIdentifier</key>
-              <string>com.a7OM.9Sqorrj</string>
-              <key>CFBundleInfoDictionaryVersion</key>
-              <string>6.0</string>
-              <key>CFBundleName</key>
-              <string>GlassTasks</string>
-              <key>CFBundleDisplayName</key>
-              <string>Glass Tasks</string>
-              <key>CFBundlePackageType</key>
-              <string>APPL</string>
-              <key>CFBundleShortVersionString</key>
-              <string>2.0</string>
-              <key>CFBundleVersion</key>
-              <string>2</string>
-              <key>LSRequiresIPhoneOS</key>
-              <true/>
-              <key>MinimumOSVersion</key>
-              <string>17.0</string>
-              <key>UIApplicationSupportsIndirectInputEvents</key>
-              <true/>
-              <key>UILaunchScreen</key>
-              <dict/>
-              <key>UISupportedInterfaceOrientations</key>
-              <array>
-                  <string>UIInterfaceOrientationPortrait</string>
-                  <string>UIInterfaceOrientationLandscapeLeft</string>
-                  <string>UIInterfaceOrientationLandscapeRight</string>
-              </array>
-              <key>UIDeviceFamily</key>
-              <array>
-                  <integer>1</integer>
-                  <integer>2</integer>
-              </array>
-              <key>NSCalendarsUsageDescription</key>
-              <string>Glass Tasks needs Calendar access to add task due dates to your system calendar.</string>
-              <key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-              <string>Glass Tasks needs write-only Calendar access to create events for your tasks.</string>
-              <key>UIApplicationSceneManifest</key>
-              <dict>
-                  <key>UIApplicationSupportsMultipleScenes</key>
-                  <false/>
-              </dict>
-          </dict>
-          </plist>
-          '''
+          # Resolve dependencies
+          swift package resolve 2>&1 | tee build-logs/resolve.txt || true
 
-          Path('build/Payload/GlassTasks.app/Info.plist').write_text(plist, encoding='utf-8')
-          PY
-          plutil -lint build/Payload/GlassTasks.app/Info.plist | tee build-logs/plutil.txt
-
-      - name: Build SwiftUI app for arm64 iPhone
+      - name: Build for iOS device (arm64)
         run: |
           set -o pipefail
-          IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-          SWIFT_COMPILER=$(xcrun --find swiftc)
-
-          echo "SDK: $IOS_SDK"
-          echo "Compiler: $SWIFT_COMPILER"
-
-          $SWIFT_COMPILER \
-            -parse-as-library \
-            App/*.swift \
-            -target arm64-apple-ios17.0 \
-            -sdk "$IOS_SDK" \
-            -framework SwiftUI \
-            -framework UIKit \
-            -framework EventKit \
-            -framework Combine \
-            -emit-executable \
-            -O \
-            -o build/Payload/GlassTasks.app/GlassTasks 2>&1 | tee build-logs/swiftc.txt
-
-          chmod +x build/Payload/GlassTasks.app/GlassTasks
-          file build/Payload/GlassTasks.app/GlassTasks | tee build-logs/file.txt
+          xcodebuild build \
+            -scheme GlassTasks \
+            -destination 'generic/platform=iOS' \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PRODUCT_BUNDLE_IDENTIFIER=com.a7OM.9Sqorrj \
+            MARKETING_VERSION=2.0 \
+            CURRENT_PROJECT_VERSION=2 \
+            INFOPLIST_KEY_CFBundleDisplayName="Glass Tasks" \
+            INFOPLIST_KEY_LSApplicationCategoryType="public.app-category.productivity" \
+            INFOPLIST_KEY_NSCalendarsUsageDescription="Glass Tasks needs Calendar access to add task due dates." \
+            INFOPLIST_KEY_UIApplicationSceneManifest_Generation=YES \
+            INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents=YES \
+            INFOPLIST_KEY_UILaunchScreen_Generation=YES \
+            INFOPLIST_KEY_UISupportedInterfaceOrientations="UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight" \
+            GENERATE_INFOPLIST_FILE=YES \
+            SWIFT_EMIT_LOC_STRINGS=YES \
+            IPHONEOS_DEPLOYMENT_TARGET=17.0 \
+            2>&1 | tee build-logs/xcodebuild.txt
 
       - name: Package unsigned IPA
         run: |
+          # Find the .app bundle
+          APP_PATH=$(find build/DerivedData -name "GlassTasks.app" -type d | grep -v "__" | head -1)
+          echo "Found app at: $APP_PATH"
+
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: .app not found"
+            find build/DerivedData -name "*.app" -type d | tee build-logs/find-app.txt
+            exit 1
+          fi
+
+          file "$APP_PATH/GlassTasks" | tee build-logs/file.txt
+
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/
           cd build
           zip -qry GlassTasks-unsigned.ipa Payload
           ls -lh GlassTasks-unsigned.ipa | tee ../build-logs/ipa.txt
@@ -169,10 +137,10 @@ jobs:
             - EventKit calendar integration with smart reminders
 
             ## iOS 26 Liquid Glass
-            When running on iOS 26, the following elements automatically get Liquid Glass appearance:
+            When running on iOS 26, these elements automatically get Liquid Glass:
             - Navigation bar
             - Segmented picker
-            - Slider knob (the smooth glass animation you wanted)
+            - Slider knob (smooth glass animation)
             - Toggle switch
             - Sheet presentations
             - Toolbar buttons
@@ -183,7 +151,7 @@ jobs:
             - Architecture: `arm64`
             - Framework: SwiftUI + EventKit
 
-            This IPA is unsigned. Re-sign with your certificate and provisioning profile before installing.
+            Unsigned IPA. Re-sign with your certificate before installing.
           files: build/GlassTasks-unsigned.ipa
           prerelease: false
           make_latest: true
