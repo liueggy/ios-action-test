@@ -17,6 +17,9 @@ let package = Package(
                 .linkedFramework("UIKit"),
                 .linkedFramework("SwiftUI"),
                 .linkedFramework("EventKit"),
+                .linkedFramework("PhotosUI"),
+                .linkedFramework("Vision"),
+                .linkedFramework("CoreImage"),
                 .linkedFramework("Combine")
             ]
         )
