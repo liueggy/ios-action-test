@@ -7,7 +7,6 @@ struct TaskRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Completion toggle button
             Button(action: {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
                     store.toggleComplete(task)
@@ -15,60 +14,55 @@ struct TaskRowView: View {
             }) {
                 Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
-                    .foregroundStyle(task.isCompleted ? .green : .secondary)
-                    .symbolEffect(.bounce, value: task.isCompleted)
+                    .foregroundColor(task.isCompleted ? .green : .secondary)
             }
             .buttonStyle(.plain)
 
-            // Task info
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)
                     .font(.body)
                     .fontWeight(.medium)
                     .strikethrough(task.isCompleted)
-                    .foregroundStyle(task.isCompleted ? .secondary : .primary)
+                    .foregroundColor(task.isCompleted ? .secondary : .primary)
 
                 HStack(spacing: 8) {
-                    // Due date
                     Label(formattedDate, systemImage: "calendar")
                         .font(.caption)
-                        .foregroundStyle(task.isOverdue ? .red : .secondary)
+                        .foregroundColor(task.isOverdue ? .red : .secondary)
 
-                    // Priority badge
                     if task.priority > 0 {
                         Text(task.priorityLabel)
                             .font(.caption2)
                             .fontWeight(.semibold)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(priorityColor.opacity(0.15), in: Capsule())
-                            .foregroundStyle(priorityColor)
+                            .background(priorityColor.opacity(0.15))
+                            .clipShape(Capsule())
+                            .foregroundColor(priorityColor)
                     }
 
-                    // Calendar indicator
                     if task.calendarEventIdentifier != nil {
                         Image(systemName: "calendar.badge.checkmark")
                             .font(.caption)
-                            .foregroundStyle(.blue)
+                            .foregroundColor(.blue)
                     }
                 }
 
                 if !task.notes.isEmpty {
                     Text(task.notes)
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundColor(.secondary)
                         .lineLimit(1)
                 }
             }
 
             Spacer()
 
-            // Add to calendar button
             if task.calendarEventIdentifier == nil && !task.isCompleted {
                 Button(action: { addToCalendar() }) {
                     Image(systemName: "calendar.badge.plus")
                         .font(.body)
-                        .foregroundStyle(.blue)
+                        .foregroundColor(.blue)
                 }
                 .buttonStyle(.plain)
                 .disabled(isAddingToCalendar)
@@ -77,8 +71,6 @@ struct TaskRowView: View {
         .padding(.vertical, 4)
         .contentShape(Rectangle())
     }
-
-    // MARK: - Helpers
 
     private var formattedDate: String {
         let formatter = DateFormatter()
@@ -104,13 +96,17 @@ struct TaskRowView: View {
 
     private func addToCalendar() {
         isAddingToCalendar = true
-        Task {
+        Swift.Task {
             if let eventId = await CalendarService.shared.addToCalendar(task: task) {
                 var updated = task
                 updated.calendarEventIdentifier = eventId
-                store.update(updated)
+                await MainActor.run {
+                    store.update(updated)
+                }
             }
-            isAddingToCalendar = false
+            await MainActor.run {
+                isAddingToCalendar = false
+            }
         }
     }
 }
