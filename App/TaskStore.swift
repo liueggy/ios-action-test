@@ -50,8 +50,9 @@ final class TaskStore {
         sortAndSave()
     }
 
-    func delete(at offsets: IndexSet) {
-        tasks.remove(atOffsets: offsets)
+    func delete(at index: Int) {
+        guard tasks.indices.contains(index) else { return }
+        tasks.remove(at: index)
         save()
     }
 
